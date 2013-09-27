@@ -22,7 +22,15 @@ public class Main {
 //        System.out.println(enc.toString(16)+" decrypted =>  "+dec.toString(16));
 
 //        BigInteger int3=new BigInteger(63,100,rnd);
-        int1.gcd(int2);
-        if (int2.isProbablePrime(100)) { System.out.println("is prime"); };
+//        if (int2.isProbablePrime(100)) { System.out.println("is prime"); };
+
+        RSA rsa=new RSA(new BigInteger("673607FCD578BB79",16),new BigInteger("47742CE93C53FDC5",16),new BigInteger("0D",16));
+        System.out.println("RSA: "+rsa);
+
+        BigInteger enc=rsa.encrypt(int1);
+        BigInteger dec=rsa.decrypt(enc);
+        System.out.println("plain: "+int1.toString(16));
+        System.out.println(" Enc : "+enc.toString(16));
+        System.out.println(" Dec : "+dec.toString(16));
     }
 }

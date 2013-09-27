@@ -240,6 +240,7 @@ public class BigInteger {
         }
         if (nwords == 0 && highbits >= 0) {
             ival = highbits;
+            words=null;
         } else {
             ival = highbits < 0 ? nwords + 2 : nwords + 1;
             words = new int[ival];
@@ -1247,7 +1248,7 @@ public class BigInteger {
         for (i = 0; i < primes.length; i++) {
             if (words == null && ival == primes[i])
                 return true;
-            if (primes[i]-minFixNum>smallFixNums.length-1) {
+            if (primes[i]-minFixNum>=smallFixNums.length) {
                 divide(this, BigInteger.valueOf(primes[i]), null, rem, TRUNCATE);
             } else {
                 divide(this, smallFixNums[primes[i] - minFixNum], null, rem, TRUNCATE);
@@ -1452,7 +1453,7 @@ public class BigInteger {
     }
 
     public String toString() {
-        return toString(10);
+        return toString(16);
     }
 
     public String toString(int radix) {

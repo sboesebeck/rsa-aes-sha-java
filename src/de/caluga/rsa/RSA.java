@@ -24,6 +24,13 @@ public class RSA {
         while(m.gcd(e).intValue() > 1) e = e.add(new BigInteger("2"));
         d = e.modInverse(m);
     }
+
+    public RSA(BigInteger n, BigInteger d, BigInteger e) {
+        this.n = n;
+        this.d = d;
+        this.e = e;
+    }
+
     public BigInteger encrypt(BigInteger message)
     {
         return message.modPow(e, n);
@@ -31,5 +38,14 @@ public class RSA {
     public BigInteger decrypt(BigInteger message)
     {
         return message.modPow(d, n);
+    }
+
+    @Override
+    public String toString() {
+        return "RSA{" +
+                "n=" + n +
+                ", d=" + d +
+                ", e=" + e +
+                '}';
     }
 }
