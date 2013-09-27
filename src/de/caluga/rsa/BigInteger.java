@@ -1247,7 +1247,7 @@ public class BigInteger {
         for (i = 0; i < primes.length; i++) {
             if (words == null && ival == primes[i])
                 return true;
-            if (primes[i]-minFixNum>smallFixNums.length-1) {
+            if (primes[i]-minFixNum>=smallFixNums.length) {
                 divide(this, BigInteger.valueOf(primes[i]), null, rem, TRUNCATE);
             } else {
                 divide(this, smallFixNums[primes[i] - minFixNum], null, rem, TRUNCATE);
