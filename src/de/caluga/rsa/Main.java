@@ -24,7 +24,9 @@ public class Main {
 //        BigInteger int3=new BigInteger(63,100,rnd);
 //        if (int2.isProbablePrime(100)) { System.out.println("is prime"); };
 
-        RSA rsa=new RSA(80);
+        RSA rsa=new RSA(64);
+        System.out.println("RSA: "+rsa);
+
         BigInteger enc=rsa.encrypt(int1);
         BigInteger dec=rsa.decrypt(enc);
         System.out.println("plain: "+int1.toString(16));

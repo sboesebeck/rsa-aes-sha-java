@@ -240,6 +240,7 @@ public class BigInteger {
         }
         if (nwords == 0 && highbits >= 0) {
             ival = highbits;
+            words=null;
         } else {
             ival = highbits < 0 ? nwords + 2 : nwords + 1;
             words = new int[ival];

@@ -32,4 +32,13 @@ public class RSA {
     {
         return message.modPow(d, n);
     }
+
+    @Override
+    public String toString() {
+        return "RSA{" +
+                "n=" + n +
+                ", d=" + d +
+                ", e=" + e +
+                '}';
+    }
 }
