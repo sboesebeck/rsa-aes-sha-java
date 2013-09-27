@@ -22,6 +22,7 @@ public class Main {
 //        System.out.println(enc.toString(16)+" decrypted =>  "+dec.toString(16));
 
 //        BigInteger int3=new BigInteger(63,100,rnd);
+        int1.gcd(int2);
         if (int2.isProbablePrime(100)) { System.out.println("is prime"); };
     }
 }
