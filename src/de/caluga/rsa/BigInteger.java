@@ -1453,7 +1453,7 @@ public class BigInteger {
     }
 
     public String toString() {
-        return toString(10);
+        return toString(16);
     }
 
     public String toString(int radix) {

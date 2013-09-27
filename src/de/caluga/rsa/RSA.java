@@ -24,6 +24,13 @@ public class RSA {
         while(m.gcd(e).intValue() > 1) e = e.add(new BigInteger("2"));
         d = e.modInverse(m);
     }
+
+    public RSA(BigInteger n, BigInteger d, BigInteger e) {
+        this.n = n;
+        this.d = d;
+        this.e = e;
+    }
+
     public BigInteger encrypt(BigInteger message)
     {
         return message.modPow(e, n);
