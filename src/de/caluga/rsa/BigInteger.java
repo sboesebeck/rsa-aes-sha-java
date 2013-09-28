@@ -81,7 +81,7 @@ public class BigInteger {
             {2, 3, 5, 7, 11, 13, 17, 19, 23, 29, 31, 37, 41, 43,
                     47, 53, 59, 61, 67, 71, 73, 79, 83, 89, 97, 101, 103, 107,
                     109, 113, 127, 131, 137, 139, 149, 151, 157, 163, 167, 173, 179, 181,
-                    191, 193, 197, 199, 211, 223, 227, 229, 233, 239, 241, 251,
+                    191, 193, 197, 199, 211, 223, 227, 229, 233, 239, 241, 251, 257, 263, 269, 271, 277, 281,
             /*Primes*/       283, 293, 307, 311, 313, 317, 331, 337, 347, 349,
 /*Primes*/       353, 359, 367, 373, 379, 383, 389, 397, 401, 409,
 /*Primes*/       419, 421, 431, 433, 439, 443, 449, 457, 461, 463,
@@ -240,7 +240,7 @@ public class BigInteger {
         }
         if (nwords == 0 && highbits >= 0) {
             ival = highbits;
-            words=null;
+            words = null;
         } else {
             ival = highbits < 0 ? nwords + 2 : nwords + 1;
             words = new int[ival];
@@ -1150,8 +1150,10 @@ public class BigInteger {
         BigInteger u = exponent;
 
         while (!u.isZero()) {
-            if (u.and(ONE).isOne())
-                s = times(s, t).mod(m);
+            if (u.and(ONE).isOne()) {
+                BigInteger tmp = times(s, t);
+                s = tmp.mod(m);
+            }
             u = u.shiftRight(1);
             t = times(t, t).mod(m);
         }
@@ -1248,7 +1250,7 @@ public class BigInteger {
         for (i = 0; i < primes.length; i++) {
             if (words == null && ival == primes[i])
                 return true;
-            if (primes[i]-minFixNum>=smallFixNums.length) {
+            if (primes[i] - minFixNum >= smallFixNums.length) {
                 divide(this, BigInteger.valueOf(primes[i]), null, rem, TRUNCATE);
             } else {
                 divide(this, smallFixNums[primes[i] - minFixNum], null, rem, TRUNCATE);
@@ -1453,7 +1455,7 @@ public class BigInteger {
     }
 
     public String toString() {
-        return toString(16);
+        return toString(16).toUpperCase();
     }
 
     public String toString(int radix) {
