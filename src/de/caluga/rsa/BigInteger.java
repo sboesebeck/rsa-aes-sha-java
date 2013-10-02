@@ -3,6 +3,8 @@ package de.caluga.rsa;
 import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Random;
 
 /**
@@ -2227,4 +2229,129 @@ public class BigInteger {
 //        }
 //        return ret.toString();
 //    }
+
+
+    public static byte[] getBytes(List<BigInteger> bigInts, int bitLen) {
+        List<Byte> ret = new ArrayList<Byte>();
+        byte[] buffer = new byte[4];
+        for (int i = 0; i < bigInts.size(); i++) {
+//            buffer[0] = buffer[1] = buffer[2] = buffer[3] = 0;
+            //stepping through integers
+            BigInteger integer = bigInts.get(i);
+            for (int j = integer.words.length - 1; j >= 0; j--) {
+                int v = integer.words[j];
+                if (j == integer.words.length - 1 && v == 0) continue;
+
+                ret.add((byte) ((v >> 24) & 0xff));
+                ret.add((byte) ((v >> 16) & 0xff));
+                ret.add((byte) ((v >> 8) & 0xff));
+                ret.add((byte) ((v) & 0xff));
+            }
+        }
+        byte[] d = new byte[ret.size()];
+        for (int i = 0; i < d.length; i++) {
+            d[i] = ret.get(i);
+        }
+        return d;
+    }
+
+
+    public static List<BigInteger> getIntegers(byte[] data, int bits) {
+        List<BigInteger> ret = new ArrayList<BigInteger>();
+        int dataSize = (bits - 1) / 32; //bytes for this bitlength allowdd
+        if ((bits - 1) % 32 != 0) {
+            dataSize++;
+        }
+        int numBis = data.length / dataSize / 4;
+        if (data.length % (dataSize * 4) != 0) {
+            numBis++;
+        }
+        int rangeLocation = 0;
+        int rangeLength = 0;
+        while (ret.size() < numBis) {
+            //creating numBis integers
+            List<Integer> numDat = new ArrayList<Integer>();
+            for (int loc = 0; loc < data.length; loc += (dataSize * 4)) {
+                rangeLocation = loc;
+                if (loc + dataSize * 4 > data.length) {
+                    rangeLength = data.length - loc;
+                } else {
+                    rangeLength = dataSize * 4;
+                }
+
+                System.out.println("Got buffer " + rangeLocation + "," + rangeLength);
+
+                for (int i = rangeLocation; i < rangeLocation + rangeLength; i += 4) {
+                    byte c = data[i];
+                    System.out.println("Processing idx " + i + "-" + (i + 4));
+                    int v = c << 24;
+                    if (i + 1 >= rangeLocation + rangeLength) {
+                        numDat.add(0, v);
+                        break;
+                    }
+                    c = data[i + 1];
+                    v |= c << 16;
+
+                    if (i + 2 >= rangeLocation + rangeLength) {
+                        numDat.add(0, v);
+                        break;
+                    }
+                    c = data[i + 2];
+                    v |= c << 8;
+
+                    if (i + 3 >= rangeLocation + rangeLength) {
+                        numDat.add(0, v);
+                        break;
+                    }
+                    c = data[i + 3];
+                    v |= c;
+
+                    numDat.add(0, v);
+                }
+                while (numDat.size() < dataSize) {
+                    numDat.add(0, 0); //padding
+                }
+
+                int[] arr = new int[dataSize];
+                for (int i = 0; i < dataSize; i++) {
+                    arr[i] = numDat.get(i);
+                }
+                BigInteger bi = new BigInteger(arr, numBis);
+                bi.pack();
+
+                System.out.println("Created BigInteger " + bi.toString(16) + " with bitlength " + bi.bitLength() + " -> data size " + bi.words.length);
+                ret.add(bi);
+                numDat.clear();
+            }
+        }
+        return ret;
+    }
+
+
+    public void pack() {
+        if (words == null && ival == 0) return;
+        if (ival > 0 && words.length == 0) {
+            words = null;
+            return;
+        }
+        if (words != null && words.length == 0) {
+            words = null;
+        } else {
+            ival = words.length;
+            while (words[ival - 1] == 0) {
+
+                int[] newWords = new int[ival - 1];
+                System.arraycopy(words, 0, newWords, 0, ival - 1);
+                ival = newWords.length;
+                words = newWords;
+            }
+            if (ival == 1) {
+                ival = words[0];
+                words = null;
+            }
+            if (ival == 0) {
+                words = null;
+            }
+        }
+    }
 }
