@@ -2251,8 +2251,72 @@ public class BigInteger {
 //        return ret.toString();
 //    }
 
+    private static int getIntFrom(byte[] buffer, int idx) {
+        int v = 0;
+        v |= buffer[idx + 0] << 24;
+        v |= buffer[idx + 1] << 16;
+        v |= buffer[idx + 2] << 8;
+        v |= buffer[idx + 3];
+        return v;
+    }
+
+    private static void fillInteger(int v, byte[] buffer) {
+        fillInteger(v, buffer, 0);
+    }
+
+    private static void fillInteger(int v, byte[] buffer, int position) {
+        buffer[0 + position] = (byte) (((v) >>> 24) & 0xff);
+        buffer[1 + position] = (byte) (((v) >>> 16) & 0xff);
+        buffer[2 + position] = (byte) (((v) >>> 8) & 0xff);
+        buffer[3 + position] = (byte) (((v) & 0xff));
+    }
+
     public byte[] bytes() {
-        throw new RuntimeException("Not implemented yet");
+        byte buffer[] = {0, 0, 0, 0};
+        ArrayList<Byte> dat = new ArrayList<Byte>();
+        //first 4 bytes == integer show length of this integer
+        // eg: 000004 => 4 bytes in length
+        // if < then maxValueInt => 4 bytes
+        if (this.words == null) {
+            //use iVal only
+            fillInteger(4, buffer);
+            dat.add(buffer[0]);
+            dat.add(buffer[1]);
+            dat.add(buffer[2]);
+            dat.add(buffer[3]);
+            fillInteger(ival, buffer);
+            dat.add(buffer[0]);
+            dat.add(buffer[1]);
+            dat.add(buffer[2]);
+            dat.add(buffer[3]);
+
+            byte[] ret = new byte[dat.size()];
+            for (int i = 0; i < dat.size(); i++) {
+                ret[i] = dat.get(i);
+            }
+            return ret;
+        }
+
+        fillInteger(ival * 4, buffer);
+        dat.add(buffer[0]);
+        dat.add(buffer[1]);
+        dat.add(buffer[2]);
+        dat.add(buffer[3]);
+
+        for (int j = ival - 1; j >= 0; j--) {
+            int v = words[j];
+//        if (j == self.dataSize - 1 && v == 0) continue; //Why!??!?!?
+            fillInteger(v, buffer);
+            dat.add(buffer[0]);
+            dat.add(buffer[1]);
+            dat.add(buffer[2]);
+            dat.add(buffer[3]);
+        }
+        byte[] ret = new byte[dat.size()];
+        for (int i = 0; i < dat.size(); i++) {
+            ret[i] = dat.get(i);
+        }
+        return ret;
     }
 
     public static BigInteger fromBytes(byte[] bytes) {
