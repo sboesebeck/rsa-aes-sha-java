@@ -48,6 +48,22 @@ public class BigInteger {
             smallFixNums[i] = new BigInteger(i + minFixNum);
     }
 
+    public int getIval() {
+        return ival;
+    }
+
+    public void setIval(int ival) {
+        this.ival = ival;
+    }
+
+    public int[] getWords() {
+        return words;
+    }
+
+    public void setWords(int[] words) {
+        this.words = words;
+    }
+
     /**
      * The constant zero as a BigInteger.
      *
@@ -254,16 +270,19 @@ public class BigInteger {
 
     public BigInteger(int bitLength, int certainty, Random rnd) {
         this(bitLength, rnd);
-
+        int tries = 0;
         // Keep going until we find a probable prime.
         BigInteger result;
         while (true) {
+            tries++;
             // ...but first ensure that BI has bitLength bits
             result = setBit(bitLength - 1);
             this.ival = result.ival;
             this.words = result.words;
-            if (isProbablePrime(certainty))
+            if (isProbablePrime(certainty)) {
+                System.out.println("Tries for prime: " + tries);
                 return;
+            }
 
             init(bitLength, rnd);
         }
@@ -420,11 +439,11 @@ public class BigInteger {
         return compareTo(this, val) > 0 ? this : val;
     }
 
-    private boolean isZero() {
+    public boolean isZero() {
         return words == null && ival == 0;
     }
 
-    private boolean isOne() {
+    public boolean isOne() {
         return words == null && ival == 1;
     }
 
@@ -621,7 +640,7 @@ public class BigInteger {
         return result.canonicalize();
     }
 
-    private static BigInteger times(BigInteger x, BigInteger y) {
+    public static BigInteger times(BigInteger x, BigInteger y) {
         if (y.words == null)
             return times(x, y.ival);
         if (x.words == null)
@@ -752,9 +771,9 @@ public class BigInteger {
      *                      (iff remainder!=null)
      * @param rounding_mode one of FLOOR, CEILING, TRUNCATE, or ROUND.
      */
-    private static void divide(BigInteger x, BigInteger y,
-                               BigInteger quotient, BigInteger remainder,
-                               int rounding_mode) {
+    public static void divide(BigInteger x, BigInteger y,
+                              BigInteger quotient, BigInteger remainder,
+                              int rounding_mode) {
         if ((x.words == null || x.ival <= 2)
                 && (y.words == null || y.ival <= 2)) {
             long x_l = x.longValue();
@@ -1150,8 +1169,9 @@ public class BigInteger {
         BigInteger s = ONE;
         BigInteger t = this;
         BigInteger u = exponent;
-
+        int runcounter = 0;
         while (!u.isZero()) {
+            runcounter++;
             if (u.and(ONE).isOne()) {
                 BigInteger tmp = times(s, t);
                 s = tmp.mod(m);
