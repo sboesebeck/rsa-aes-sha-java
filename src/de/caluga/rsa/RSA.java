@@ -19,9 +19,15 @@ public class RSA {
         n = p.multiply(q);
         BigInteger m = (p.subtract(BigInteger.ONE))
                 .multiply(q.subtract(BigInteger.ONE));
-        e = new BigInteger("3");
-        while (m.gcd(e).intValue() > 1) e = e.add(new BigInteger("2"));
-        d = e.modInverse(m);
+        while (true) {
+            e = new BigInteger("3");
+            while (m.gcd(e).intValue() > 1) e = e.add(new BigInteger("2"));
+            try {
+                d = e.modInverse(m);
+                break;
+            } catch (Exception e) {
+            }
+        }
     }
 
     public RSA(BigInteger n, BigInteger d, BigInteger e) {

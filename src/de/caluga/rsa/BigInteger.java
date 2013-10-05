@@ -280,7 +280,7 @@ public class BigInteger {
             this.ival = result.ival;
             this.words = result.words;
             if (isProbablePrime(certainty)) {
-                System.out.println("Tries for prime: " + tries);
+//                System.out.println("Tries for prime: " + tries);
                 return;
             }
 
@@ -399,7 +399,7 @@ public class BigInteger {
         }
     }
 
-    private boolean isNegative() {
+    protected boolean isNegative() {
         return (words == null ? ival : words[ival - 1]) < 0;
     }
 
@@ -1289,7 +1289,8 @@ public class BigInteger {
         int b = pMinus1.getLowestSetBit();
 
         // Set m such that this = 1 + 2^b * m.
-        BigInteger m = pMinus1.divide(valueOf(2L << b - 1));
+        long val = 2L << b - 1;
+        BigInteger m = pMinus1.divide(valueOf(val));
 
         // The HAC (Handbook of Applied Cryptography), Alfred Menezes & al. Note
         // 4.49 (controlling the error probability) gives the number of trials
@@ -2250,6 +2251,13 @@ public class BigInteger {
 //        return ret.toString();
 //    }
 
+    public byte[] bytes() {
+        throw new RuntimeException("Not implemented yet");
+    }
+
+    public static BigInteger fromBytes(byte[] bytes) {
+        throw new RuntimeException("not implemented yet");
+    }
 
     public static byte[] getBytes(List<BigInteger> bigInts, int bitLen) {
         List<Byte> ret = new ArrayList<Byte>();
@@ -2373,5 +2381,106 @@ public class BigInteger {
                 words = null;
             }
         }
+    }
+
+    public byte[] dataFromBigIntArray(List<BigInteger> lst, int bitLen) {
+        ArrayList<Byte> ret = new ArrayList<Byte>();
+        int intsNeeded = bitLen / 8 / 4;
+        if (bitLen % 32 != 0) {
+            intsNeeded++;
+        }
+        for (int i = 0; i < lst.size(); i++) {
+            BigInteger integer = lst.get(i);
+            //Padding
+            if (integer.ival < intsNeeded) {
+                for (int j = 0; j < intsNeeded - integer.ival; i++) {
+                    ret.add(new Byte((byte) 0));
+                    ret.add(new Byte((byte) 0));
+                    ret.add(new Byte((byte) 0));
+                    ret.add(new Byte((byte) 0));
+                }
+
+            }
+            //stepping through integers
+            for (int j = integer.ival - 1; j >= 0; j--) {
+                int v = integer.words[j];
+                if (j == integer.ival - 1 && v == 0) continue;
+                ret.add((byte) ((v >> 24) & 0xff));
+                ret.add((byte) ((v >> 16) & 0xff));
+                ret.add((byte) ((v >> 8) & 0xff));
+                ret.add((byte) ((v) & 0xff));
+            }
+
+        }
+        byte[] bytes = new byte[ret.size()];
+        for (int i = 0; i < ret.size(); i++) {
+            bytes[i] = ret.get(i);
+        }
+        return bytes;
+    }
+
+
+    public static List<BigInteger> fromBytes(byte[] data, int bitLen) {
+        int dataSize = (bitLen - 1) / 32; //bytes for this bitlength allowdd
+        if ((bitLen - 1) % 32 != 0) {
+            dataSize++;
+        }
+        int numBis = data.length / dataSize / 4;
+        if (data.length % (dataSize * 4) != 0) {
+            numBis++;
+        }
+        int rangeLocation = 0;
+        int rangeLength = 0;
+//    NSLog(@"ints allowed %d, own key length %d Bit, number of BigIntegers %d => Length of self to decode %d byte", dataSize, bitLen, numBis, (int) self.length);
+        List<BigInteger> ret = new ArrayList<BigInteger>();
+
+        while (ret.size() < numBis) {
+            //creating numBis integers
+            for (int loc = 0; loc < data.length; loc += (dataSize * 4)) {
+                int[] numDat = new int[dataSize];
+                int numDatIdx = dataSize - 1;
+                rangeLocation = loc;
+                if (loc + dataSize * 4 > data.length) {
+                    rangeLength = data.length - loc;
+                } else {
+                    rangeLength = dataSize * 4;
+                }
+
+//            NSLog(@"Got buffer %d, %d    %@", range.location, range.length, [[NSData dataWithBytes:(buffer + range.location) length:range.length] hexDump:NO]);
+
+                for (int i = rangeLocation; i < rangeLocation + rangeLength; i += 4) {
+                    byte c = data[i];
+//                NSLog(@"Processing idx %d-%d", i, i + 4);
+                    int v = c << 24;
+                    if (i + 1 > rangeLocation + rangeLength) {
+                        numDat[numDatIdx--] = v;
+                        break;
+                    }
+                    c = data[i + 1];
+                    v |= c << 16;
+
+                    if (i + 2 > rangeLocation + rangeLength) {
+                        numDat[numDatIdx--] = v;
+                        break;
+                    }
+                    c = data[i + 2];
+                    v |= c << 8;
+
+                    if (i + 3 > rangeLocation + rangeLength) {
+                        numDat[numDatIdx--] = v;
+                        break;
+                    }
+                    c = data[i + 3];
+                    v |= c;
+                    numDat[numDatIdx--] = v;
+                }
+                BigInteger bi = new BigInteger(numDat, dataSize);
+                bi.pack();
+                ret.add(bi);
+            }
+
+
+        }
+        return ret;
     }
 }

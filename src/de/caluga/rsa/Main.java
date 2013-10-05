@@ -28,10 +28,26 @@ public class Main {
 
         SecureRandom rnd = new SecureRandom();
 //        BigInteger int1=new BigInteger(2048, rnd);
-        BigInteger int1 = new BigInteger("C0F520678AE1644F67BC03CB124D3F127800E8C539BC6F9B15076B5182BBCEA8969F5D8F8A1D51E65A3FABFDA2A30939D6514BBAA72CCECE05261B2558A9BBEC73335957842BDB8B01FEFF48962A95506B57687DCAF2A21DBAA45A1C1122B2531D11230C2310DD13C905BEF608904D32955D7031D88698C5A35FFCE5F07FB40B", 16);
-        BigInteger int2 = new BigInteger("213421341234123412341234AFDE234D", 16);
+//        BigInteger m = new BigInteger("9A94F9528C336AED8014B520C50A9BBE570CDE487D713BE7176C0572A0109E5E4539C00C6011E9C9C5CDEE039B8255A3B1380079283C7E9011A801A9F1DDD0E0", 16);
+        BigInteger e = new BigInteger("C1F95BCD0850FB01", 16);
+        BigInteger tmp = new BigInteger("1F0352197BD7827F800000000000000", 16);
+        BigInteger m = new BigInteger("C1F95BCD0850FB01", 16);
+        BigInteger s = tmp.mod(m);
+
         long start = System.currentTimeMillis();
-//        RSA rsa=new RSA(1024);
+//        for (int i=0; i<1000;i++) {
+        RSA rsa = new RSA(4096);
+//            e=BigInteger.probablePrime(64,rnd);
+//            if (e.isProbablePrime(100)) {
+//                System.out.println("Jo "+e);
+//            }
+//            BigInteger integer=new BigInteger(512,rnd);
+//            if (integer.isNegative()) {
+//                System.out.println("Found it: "+integer);
+//                break;
+//            }
+
+//        }
 //         int2=BigInteger.probablePrime(1024, rnd);
 //           int1.isProbablePrime(100);
 //        int xlen = int1.getIval();
@@ -55,9 +71,13 @@ public class Main {
 ////            }
 ////            System.out.println(i+" - "+count);
 //        }
-        RSA rsa = new RSA(4096);
+//        RSA rsa = new RSA(4096);
+
+
+//        e.modInverse(m);
         System.out.println(" took " + (System.currentTimeMillis() - start) + " ms");
-        System.out.println("Prime: " + int2);
+//        System.out.println("Prime: " + int2);
+
 
     }
 
