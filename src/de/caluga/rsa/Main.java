@@ -27,12 +27,17 @@ public class Main {
 //        BigInteger dec=rsa.decrypt(enc);
 
         SecureRandom rnd = new SecureRandom();
-//        BigInteger int1=new BigInteger(2048, rnd);
-//        BigInteger m = new BigInteger("9A94F9528C336AED8014B520C50A9BBE570CDE487D713BE7176C0572A0109E5E4539C00C6011E9C9C5CDEE039B8255A3B1380079283C7E9011A801A9F1DDD0E0", 16);
-        BigInteger e = new BigInteger("C1F95BCD0850FB01", 16);
-        BigInteger tmp = new BigInteger("1F0352197BD7827F800000000000000", 16);
-        BigInteger m = new BigInteger("C1F95BCD0850FB01", 16);
-        BigInteger s = tmp.mod(m);
+//        BigInteger e=new BigInteger(128,100, rnd);
+        BigInteger m = new BigInteger("13C64F91D0A51C7B13C78882B96A80AA", 16);
+        BigInteger e = new BigInteger("9E327C8E8528E3D89E3C4415CB540555", 16);
+        BigInteger sr = m.shiftRight(1);
+        sr = sr.shiftRight(1);
+        if (e.isProbablePrime(100)) {
+            System.out.println("Joooo! " + e.toString());
+        }
+//        BigInteger tmp = new BigInteger("1F0352197BD7827F800000000000000", 16);
+//        BigInteger m = new BigInteger("C1F95BCD0850FB01", 16);
+//        BigInteger s = tmp.mod(m);
 
         long start = System.currentTimeMillis();
 //        for (int i=0; i<1000;i++) {
