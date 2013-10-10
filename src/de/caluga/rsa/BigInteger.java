@@ -793,6 +793,8 @@ public class BigInteger {
         y.getAbsolute(ywords);
         while (ylen > 1 && ywords[ylen - 1] == 0) ylen--;
 
+        BigInteger ydebug=new BigInteger(ywords,ylen);
+
         int xlen = x.words == null ? 1 : x.ival;
         int[] xwords = new int[xlen + 2];
         x.getAbsolute(xwords);
