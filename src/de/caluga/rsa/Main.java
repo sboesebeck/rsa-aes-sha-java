@@ -31,9 +31,12 @@ public class Main {
 //        BigInteger int1 = new BigInteger("13C64F91D0A51C7B13C78882B96A80AA", 16);
         BigInteger int2 = new BigInteger("9E327C8E8528E3D89E3C4415CB540555", 16);
 //        BigInteger z=BigInteger.valueOf(2).modPow(new BigInteger("278C9F23A14A38F6278F110572D50155",16),int2);
-//        BigInteger t=new BigInteger("255D6297C65315DEC2D1CC4AE88DAF622BE917B0FF1C59470BF463FA4DE46E39",16);
-//        t=t.mod(int2);
-            int2.isProbablePrime(100);
+        BigInteger t = new BigInteger("255D6297C65315DEC2D1CC4AE88DAF622BE917B0FF1C59470BF463FA4DE46E39", 16);
+        t = t.mod(int2); //// <<<<<< errror
+        BigInteger rem = new BigInteger("0", 16);
+        BigInteger.divide(int2, BigInteger.valueOf(5), null, rem, 3);
+
+        boolean ispr = int2.isProbablePrime(100);
 //        int2.modInverse(int1);
 //        System.out.println(" took " + (System.currentTimeMillis() - start) + " ms");
 //        System.out.println("Prime: " + int2);
