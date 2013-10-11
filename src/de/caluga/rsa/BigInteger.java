@@ -1041,7 +1041,7 @@ public class BigInteger {
         return xy;
     }
 
-    private static void euclidInv(BigInteger a, BigInteger b,
+    public static void euclidInv(BigInteger a, BigInteger b,
                                   BigInteger prevDiv, BigInteger[] xy) {
         if (b.isZero())
             throw new ArithmeticException("not invertible");
