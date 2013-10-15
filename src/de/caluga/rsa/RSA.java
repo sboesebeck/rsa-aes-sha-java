@@ -20,8 +20,8 @@ public class RSA {
         BigInteger m = (p.subtract(BigInteger.ONE))
                 .multiply(q.subtract(BigInteger.ONE));
         while (true) {
-            e = new BigInteger("3");
-            while (m.gcd(e).intValue() > 1) e = e.add(new BigInteger("2"));
+            e = new BigInteger(bitlen, new SecureRandom());
+            while (m.gcd(e).intValue() > 1) e = e.add(new BigInteger(bitlen, new SecureRandom()));
             try {
                 d = e.modInverse(m);
                 break;

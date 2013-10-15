@@ -569,7 +569,7 @@ public class BigInteger {
     /**
      * Add two BigIntegers, yielding their sum as another BigInteger.
      */
-    private static BigInteger add(BigInteger x, BigInteger y, int k) {
+    public static BigInteger add(BigInteger x, BigInteger y, int k) {
         if (x.words == null && y.words == null)
             return valueOf((long) k * (long) y.ival + (long) x.ival);
         if (k != 1) {
@@ -793,7 +793,7 @@ public class BigInteger {
         y.getAbsolute(ywords);
         while (ylen > 1 && ywords[ylen - 1] == 0) ylen--;
 
-        BigInteger ydebug=new BigInteger(ywords,ylen);
+        BigInteger ydebug = new BigInteger(ywords, ylen);
 
         int xlen = x.words == null ? 1 : x.ival;
         int[] xwords = new int[xlen + 2];
@@ -1042,7 +1042,7 @@ public class BigInteger {
     }
 
     public static void euclidInv(BigInteger a, BigInteger b,
-                                  BigInteger prevDiv, BigInteger[] xy) {
+                                 BigInteger prevDiv, BigInteger[] xy) {
         if (b.isZero())
             throw new ArithmeticException("not invertible");
 
