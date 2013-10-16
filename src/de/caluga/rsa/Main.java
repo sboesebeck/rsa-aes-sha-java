@@ -28,14 +28,14 @@ public class Main {
 
 
         SecureRandom rnd = new SecureRandom();
-//        BigInteger int2=new BigInteger(128,100, rnd);
-        BigInteger i = new BigInteger("CB55D1EE151BA7490CAF3497507F60BB", 16);
+//        BigInteger i=new BigInteger(128,100, rnd);
+        BigInteger i = new BigInteger("C77C8C2AB24A14665419AF06ACDCEFB5", 16);
 //        for (int j=0;j<128;j++) {
 //            i=i.shiftRight(1);
 //            System.out.println("Shifted... "+j+": "+i);
 //        }
 
-        i.isProbablePrime(100);
+        boolean prm=i.isProbablePrime(100);
 
 //        BigInteger z=BigInteger.valueOf(2).modPow(new BigInteger("278C9F23A14A38F6278F110572D50155",16),int2);
 //        BigInteger t = new BigInteger("255D6297C65315DEC2D1CC4AE88DAF622BE917B0FF1C59470BF463FA4DE46E39", 16);
