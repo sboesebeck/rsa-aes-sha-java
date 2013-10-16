@@ -24,6 +24,7 @@ public class RSA {
             while (m.gcd(e).intValue() > 1) e = e.add(new BigInteger(bitlen, new SecureRandom()));
             try {
                 d = e.modInverse(m);
+                System.out.println("BitLength d: " + d.bitLength());
                 break;
             } catch (Exception e) {
             }
