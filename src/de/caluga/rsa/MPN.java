@@ -123,7 +123,7 @@ public class MPN {
      * Code transcribed from gmp-2.0's mpn_udiv_w_sdiv function.
      */
     public static long udiv_qrnnd(long N, int D) {
-        long q=0, r=0;
+        long q = 0, r = 0;
         long a1 = N >>> 32;
         long a0 = N & 0xffffffffL;
         if (D >= 0) {
@@ -132,7 +132,7 @@ public class MPN {
                 q = N / D;
                 r = N % D;
             } else {
-	    /* Compute c1*2^32 + c0 = a1*2^32 + a0 - 2^31*d */
+        /* Compute c1*2^32 + c0 = a1*2^32 + a0 - 2^31*d */
                 long c = N - ((long) D << 31);
 	    /* Divide (c1*2^32 + c0) by d */
                 q = c / D;
