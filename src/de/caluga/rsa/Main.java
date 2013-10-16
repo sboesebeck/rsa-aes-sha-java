@@ -30,12 +30,16 @@ public class Main {
         SecureRandom rnd = new SecureRandom();
 //        BigInteger i=new BigInteger(128,100, rnd);
         BigInteger i = new BigInteger("C77C8C2AB24A14665419AF06ACDCEFB5", 16);
+        BigInteger m = new BigInteger("8594623A6BB5A8FBC4A3ACFDB5E742FB", 16);
+
+        m.gcd(new BigInteger("12345", 16));
 //        for (int j=0;j<128;j++) {
 //            i=i.shiftRight(1);
 //            System.out.println("Shifted... "+j+": "+i);
 //        }
 
-        boolean prm=i.isProbablePrime(100);
+        BigInteger slf = BigInteger.valueOf(1).shiftLeft(127);
+        boolean prm = i.isProbablePrime(100);
 
 //        BigInteger z=BigInteger.valueOf(2).modPow(new BigInteger("278C9F23A14A38F6278F110572D50155",16),int2);
 //        BigInteger t = new BigInteger("255D6297C65315DEC2D1CC4AE88DAF622BE917B0FF1C59470BF463FA4DE46E39", 16);
