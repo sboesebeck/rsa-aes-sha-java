@@ -1064,7 +1064,11 @@ public class BigInteger {
         } else {
             BigInteger rem = new BigInteger();
             BigInteger quot = new BigInteger();
+            if (a.toString(16).toUpperCase().equals("4A0ED6F3EEA410A05")) {
+                System.out.println("Found it!");
+            }
             divide(a, b, quot, rem, FLOOR);
+            System.out.println("A:" + a + " / b:" + b + " = " + quot + " rem: " + rem + " iVal:" + rem.getIval());
             // quot and rem may not be in canonical form. ensure
             rem.canonicalize();
             quot.canonicalize();
