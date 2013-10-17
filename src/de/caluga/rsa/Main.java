@@ -21,14 +21,17 @@ public class Main {
 //                new BigInteger("3FFAA06A337D84B26A542EB2DD6618C9", 16),
 //                new BigInteger("866D0F53920C4295", 16));
 ////
-        BigInteger a = new BigInteger("8417B6F5E3B0324E", 16);
-        BigInteger b = new BigInteger("12666F791BF7E8A3", 16);
-        BigInteger rem = new BigInteger("0", 16);
-        BigInteger quot = new BigInteger("0", 16);
-
-        BigInteger.divide(a, b, quot, rem, 1);
+        //    BigInteger *a=[BigInteger valueOf:@"-1597FACF" usingRadix:16];
+//        BigInteger *b=[BigInteger valueOf:@"-62DFC84" usingRadix:16];
+//        BigInteger *p=[BigInteger valueOf:@"1" usingRadix:16];
+        BigInteger a = new BigInteger("-1597FACF", 16);
+        BigInteger b = new BigInteger("-62DFC84", 16);
+        BigInteger p = new BigInteger("1", 16);
         BigInteger[] bis = new BigInteger[2];
-        BigInteger.euclidInv(b, rem, new BigInteger("1", 16), bis);
+//        BigInteger.euclidInv(a,b,p,bis);
+        p = BigInteger.times(a, new BigInteger("0", 16));
+
+
         BigInteger small = new BigInteger("1234567890", 16);
         RSA rsa = new RSA(128);
         BigInteger enc = rsa.encrypt(small);
