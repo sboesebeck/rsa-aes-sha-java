@@ -2325,10 +2325,12 @@ public class BigInteger {
         return ret;
     }
 
+    //TODO
     public static BigInteger fromBytes(byte[] bytes) {
         throw new RuntimeException("not implemented yet");
     }
 
+    //TODO - check
     public static byte[] getBytes(List<BigInteger> bigInts, int bitLen) {
         List<Byte> ret = new ArrayList<Byte>();
         byte[] buffer = new byte[4];
