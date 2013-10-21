@@ -37,13 +37,20 @@ public class RSA {
         this.e = e;
     }
 
+    private BigInteger crypt(BigInteger message, BigInteger mp, BigInteger mod) {
+        return message.modPow(mp, mod);
+    }
+
     public BigInteger encrypt(BigInteger message) {
-        return message.modPow(e, n);
+        return crypt(message, e, n);
     }
 
     public BigInteger decrypt(BigInteger message) {
-        return message.modPow(d, n);
+        return crypt(message, d, n);
     }
+
+    //TODO: implement sign - md5 missing
+    //TODO: implement isValidSigned - md5 missing
 
     @Override
     public String toString() {
