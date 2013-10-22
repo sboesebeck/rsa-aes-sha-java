@@ -30,7 +30,13 @@ public class Main {
 //        BigInteger[] bis = new BigInteger[2];
 //        BigInteger.euclidInv(b, rem, new BigInteger("1", 16), bis);
 //        BigInteger small = new BigInteger("1234567890", 16);
-//        RSA rsa = new RSA(128);
+        RSA rsa = new RSA(128);
+
+        byte[] b = rsa.bytes();
+        RSA rsa2 = RSA.fromBytes(b);
+        System.out.println("RSA1: " + rsa);
+        System.out.println("RSA2: " + rsa2);
+
 //        BigInteger enc = rsa.encrypt(small);
 //        BigInteger dec = rsa.decrypt(enc);
 
@@ -44,7 +50,7 @@ public class Main {
         BigInteger n = new BigInteger("5A194CAB9ED4DCB84505C19F73C4E64F", 16);
         BigInteger d = new BigInteger("0", 16);
         BigInteger m = new BigInteger("5A194CAB9ED4DCB7154640E617248300", 16);
-        d = e.modInverse(m);
+//        d = e.modInverse(m);
 
 ////        m.gcd(new BigInteger("12345", 16));
 //        for (int j=0;j<128;j++) {

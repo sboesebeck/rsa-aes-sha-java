@@ -1,6 +1,8 @@
 package de.caluga.rsa;
 
 import java.security.SecureRandom;
+import java.util.ArrayList;
+import java.util.List;
 
 /**
  * User: Stephan Bösebeck
@@ -11,6 +13,7 @@ import java.security.SecureRandom;
  */
 public class RSA {
     private BigInteger n, d, e;
+    private int bitLen;
 
     public RSA(int bitlen) {
         SecureRandom r = new SecureRandom();
@@ -29,6 +32,14 @@ public class RSA {
             } catch (Exception e) {
             }
         }
+    }
+
+    public int getBitLen() {
+        return bitLen;
+    }
+
+    public void setBitLen(int bitLen) {
+        this.bitLen = bitLen;
     }
 
     public RSA(BigInteger n, BigInteger d, BigInteger e) {
@@ -60,5 +71,43 @@ public class RSA {
                 ", e=" + e +
                 '}';
     }
+
+    public static RSA fromBytes(byte[] data) {
+        List<BigInteger> lst = BigInteger.deSerializeInts(data);
+        if (lst.size() != 4) {
+            throw new IllegalArgumentException("byte array mismatch - " + lst.size());
+        }
+        BigInteger bitLen = lst.get(0);
+        BigInteger n = lst.get(1);
+        BigInteger e = lst.get(2);
+        BigInteger d = lst.get(3);
+        RSA ret = new RSA(n, d, e);
+        ret.setBitLen(bitLen.intValue());
+
+        return ret;
+    }
+
+
+    public byte[] bytes() {
+        List<Byte> ret = new ArrayList<Byte>();
+        for (byte b : BigInteger.valueOf(getBitLen()).bytes()) {
+            ret.add(b);
+        }
+        for (byte b : n.bytes()) {
+            ret.add(b);
+        }
+        for (byte b : e.bytes()) {
+            ret.add(b);
+        }
+        for (byte b : d.bytes()) {
+            ret.add(b);
+        }
+        byte[] bytes = new byte[ret.size()];
+        for (int i = 0; i < bytes.length; i++) {
+            bytes[i] = ret.get(i);
+        }
+        return bytes;
+    }
+
 
 }
