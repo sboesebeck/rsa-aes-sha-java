@@ -2235,11 +2235,12 @@ public class BigInteger {
 
     private static int getIntFrom(byte[] buffer, int idx) {
         long v = 0;
-        v |= buffer[idx + 0] << 24;
-        v |= buffer[idx + 1] << 16;
-        v |= buffer[idx + 2] << 8;
-        v |= buffer[idx + 3];
-        return (int) v;
+        v |= ((long) buffer[idx + 0] & 0xff) << 24;
+        v |= ((long) buffer[idx + 1] & 0xff) << 16;
+        v |= ((long) buffer[idx + 2] & 0xff) << 8;
+        v |= ((long) buffer[idx + 3] & 0xff);
+
+        return (int) (v & 0xffffffff);
     }
 
     private static void fillInteger(int v, byte[] buffer) {
@@ -2301,37 +2302,12 @@ public class BigInteger {
         return ret;
     }
 
-    //TODO - check
-    public static byte[] getBytes(List<BigInteger> bigInts, int bitLen) {
-        List<Byte> ret = new ArrayList<Byte>();
-//        byte[] buffer = new byte[4];
-        for (int i = 0; i < bigInts.size(); i++) {
-//            buffer[0] = buffer[1] = buffer[2] = buffer[3] = 0;
-            //stepping through integers
-            BigInteger integer = bigInts.get(i);
-            for (int j = integer.words.length - 1; j >= 0; j--) {
-                int v = integer.words[j];
-                if (j == integer.words.length - 1 && v == 0) continue;
-
-                ret.add((byte) ((v >> 24) & 0xff));
-                ret.add((byte) ((v >> 16) & 0xff));
-                ret.add((byte) ((v >> 8) & 0xff));
-                ret.add((byte) ((v) & 0xff));
-            }
-        }
-        byte[] d = new byte[ret.size()];
-        for (int i = 0; i < d.length; i++) {
-            d[i] = ret.get(i);
-        }
-        return d;
-    }
-
 
     public static List<BigInteger> deSerializeInts(byte[] data) {
         List<BigInteger> ret = new ArrayList<BigInteger>();
         for (int i = 0; i < data.length; ) {
             BigInteger bi = new BigInteger();
-            i += BigInteger.fromBytes(bi, data, i);
+            i = BigInteger.fromBytes(bi, data, i);
             ret.add(bi);
         }
         return ret;
@@ -2365,32 +2341,47 @@ public class BigInteger {
         }
     }
 
-    public byte[] dataFromBigIntArray(List<BigInteger> lst, int bitLen) {
+    public static byte[] dataFromBigIntArray(List<BigInteger> lst, int bitLen) {
         ArrayList<Byte> ret = new ArrayList<Byte>();
-        int intsNeeded = bitLen / 8 / 4;
-        if (bitLen % 32 != 0) {
-            intsNeeded++;
-        }
+
         for (int i = 0; i < lst.size(); i++) {
             BigInteger integer = lst.get(i);
-            //Padding
-            if (integer.ival < intsNeeded) {
-                for (int j = 0; j < intsNeeded - integer.ival; i++) {
-                    ret.add(new Byte((byte) 0));
-                    ret.add(new Byte((byte) 0));
-                    ret.add(new Byte((byte) 0));
-                    ret.add(new Byte((byte) 0));
+            //stepping through integers
+            boolean simple = false;
+            boolean skip = true;
+            for (int j = integer.ival - 1; j >= 0; j--) {
+                long v = integer.ival;
+                if (integer.words == null || integer.words.length == 0) {
+                    simple = true;
+                } else {
+                    v = integer.words[j];
+                }
+                if (v == 0 && skip) continue;
+                char val = (char) ((v >> 24) & 0xff);
+                if (val != 0 || !skip) {
+                    ret.add((byte) (val & 0xff));
+                    skip = false;
                 }
 
-            }
-            //stepping through integers
-            for (int j = integer.ival - 1; j >= 0; j--) {
-                int v = integer.words[j];
-                if (j == integer.ival - 1 && v == 0) continue;
-                ret.add((byte) ((v >> 24) & 0xff));
-                ret.add((byte) ((v >> 16) & 0xff));
-                ret.add((byte) ((v >> 8) & 0xff));
-                ret.add((byte) ((v) & 0xff));
+                val = (char) ((v >> 16) & 0xff);
+                if (val != 0 || !skip) {
+                    ret.add((byte) (val & 0xff));
+                    skip = false;
+                }
+
+                val = (char) ((v >> 8) & 0xff);
+                if (val != 0 || !skip) {
+                    ret.add((byte) (val & 0xff));
+                    skip = false;
+                }
+
+                val = (char) ((v) & 0xff);
+                if (val != 0 || !skip) {
+                    ret.add((byte) (val & 0xff));
+                    skip = false;
+                }
+
+                if (simple) break;
             }
 
         }
@@ -2426,6 +2417,7 @@ public class BigInteger {
         }
         int rangeLocation = 0;
         int rangeLength = 0;
+        int skip = 0;
 //    NSLog(@"ints allowed %d, own key length %d Bit, number of BigIntegers %d => Length of self to decode %d byte", dataSize, bitLen, numBis, (int) self.length);
         List<BigInteger> ret = new ArrayList<BigInteger>();
 
@@ -2447,27 +2439,31 @@ public class BigInteger {
                     byte c = data[i];
 //                NSLog(@"Processing idx %d-%d", i, i + 4);
                     int v = c << 24;
-                    if (i + 1 > rangeLocation + rangeLength) {
+                    if (i + 1 >= rangeLocation + rangeLength) {
                         numDat[numDatIdx--] = v;
+                        skip = 24;
                         break;
                     }
                     c = data[i + 1];
                     v |= c << 16;
 
-                    if (i + 2 > rangeLocation + rangeLength) {
+                    if (i + 2 >= rangeLocation + rangeLength) {
                         numDat[numDatIdx--] = v;
+                        skip = 16;
                         break;
                     }
                     c = data[i + 2];
                     v |= c << 8;
 
-                    if (i + 3 > rangeLocation + rangeLength) {
+                    if (i + 3 >= rangeLocation + rangeLength) {
                         numDat[numDatIdx--] = v;
+                        skip = 8;
                         break;
                     }
                     c = data[i + 3];
                     v |= c;
                     numDat[numDatIdx--] = v;
+                    skip = 0;
                 }
                 BigInteger bi = new BigInteger(numDat, dataSize);
                 bi.pack();
@@ -2475,6 +2471,17 @@ public class BigInteger {
             }
 
 
+        }
+        if (skip > 0) {
+            BigInteger bi = ret.get(ret.size() - 1);
+            ret.remove(ret.size() - 1);
+            if (!bi.isZero()) {
+                bi = bi.shiftRight(skip);
+                bi.pack();
+                if (!bi.isZero()) {
+                    ret.add(bi);
+                }
+            }
         }
         return ret;
     }

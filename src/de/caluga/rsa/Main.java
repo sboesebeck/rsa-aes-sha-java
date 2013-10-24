@@ -1,5 +1,6 @@
 package de.caluga.rsa;
 
+import java.nio.charset.Charset;
 import java.security.SecureRandom;
 
 public class Main {
@@ -33,8 +34,9 @@ public class Main {
         RSA rsa = new RSA(128);
 
         byte[] b = rsa.bytes();
-        RSA rsa2 = RSA.fromBytes(b);
         System.out.println("RSA1: " + rsa);
+        System.out.println("rsa bytes: " + Utils.getHex(b));
+        RSA rsa2 = RSA.fromBytes(b);
         System.out.println("RSA2: " + rsa2);
 
 //        BigInteger enc = rsa.encrypt(small);
@@ -50,6 +52,19 @@ public class Main {
         BigInteger n = new BigInteger("5A194CAB9ED4DCB84505C19F73C4E64F", 16);
         BigInteger d = new BigInteger("0", 16);
         BigInteger m = new BigInteger("5A194CAB9ED4DCB7154640E617248300", 16);
+        System.out.println(Utils.getHex(m.bytes()));
+
+        String tst = "this is a test";
+        byte[] clear = tst.getBytes(Charset.forName("UTF8"));
+        System.out.println("Cleartext: " + Utils.getHex(clear));
+        byte[] enc = rsa.encrypt(clear);
+        byte[] dec = rsa.decrypt(enc);
+        System.out.println("decrypted: " + Utils.getHex(dec));
+        String tstDec = new String(dec, Charset.forName("UTF8"));
+        System.out.println("Text decoded: " + tstDec);
+
+        byte[] signature = rsa.sign(clear);
+
 //        d = e.modInverse(m);
 
 ////        m.gcd(new BigInteger("12345", 16));

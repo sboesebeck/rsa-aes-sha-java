@@ -3,6 +3,7 @@ package de.caluga.rsa;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.security.SecureRandom;
+import java.util.ArrayList;
 import java.util.List;
 
 /**
@@ -34,7 +35,7 @@ public class RSA {
             } catch (Exception e) {
             }
         }
-        this.bitlen = bitlen;
+        this.bitLen = bitlen;
     }
 
     public int getBitLen() {
@@ -45,16 +46,12 @@ public class RSA {
         this.bitLen = bitLen;
     }
 
- 
+
     public RSA(BigInteger n, BigInteger d, BigInteger e, int bits) {
         this.n = n;
         this.d = d;
         this.e = e;
         this.bitLen = bits;
-    }
-
-    public RSA(byte[] data) {
-//        arr=BigInteger.ser
     }
 
     /**
@@ -63,12 +60,43 @@ public class RSA {
      * @param message
      * @return
      */
-    private byte[] encrypt(byte[] message) {
+    public byte[] encrypt(byte[] message) {
         return encrypt(message, e, n);
     }
 
     private byte[] encrypt(byte[] message, BigInteger mp, BigInteger mod) {
-        List<BigInteger> bi = BigInteger.getIntegers(message, bitlen);
+        List<BigInteger> bi = BigInteger.getIntegersOfBitLength(message, bitLen);
+        List<Byte> ret = new ArrayList<Byte>();
+        for (BigInteger b : bi) {
+            BigInteger enc = crypt(b, mp, mod);
+            byte[] encB = enc.bytes();
+            for (byte eb : encB) {
+                ret.add(eb);
+            }
+        }
+
+        byte[] bytes = new byte[ret.size()];
+        for (int i = 0; i < bytes.length; i++) {
+            bytes[i] = ret.get(i);
+        }
+        return bytes;
+    }
+
+
+    public byte[] decrypt(byte[] message) {
+        return decrypt(message, d, n);
+
+    }
+
+    private byte[] decrypt(byte[] message, BigInteger mp, BigInteger mod) {
+        List<BigInteger> bi = BigInteger.deSerializeInts(message);
+        List<Byte> ret = new ArrayList<Byte>();
+        List<BigInteger> decrypted = new ArrayList<BigInteger>();
+        for (BigInteger toDec : bi) {
+            BigInteger dec = crypt(toDec, mp, mod);
+            decrypted.add(dec);
+        }
+        return BigInteger.dataFromBigIntArray(decrypted, bitLen - 4);
     }
 
 
@@ -84,16 +112,61 @@ public class RSA {
         return crypt(message, d, n);
     }
 
-    //TODO: implement sign - md5 missing
-    //TODO: implement isValidSigned - md5 missing
+    public byte[] getPrivateKey() {
+        List<Byte> ret = new ArrayList<Byte>();
+        for (byte b : BigInteger.valueOf(getBitLen()).bytes()) {
+            ret.add(b);
+        }
+        for (byte b : n.bytes()) {
+            ret.add(b);
+        }
+//        for (byte b : e.bytes()) {
+//            ret.add(b);
+//        }
+        for (byte b : d.bytes()) {
+            ret.add(b);
+        }
+        byte[] bytes = new byte[ret.size()];
+        for (int i = 0; i < bytes.length; i++) {
+            bytes[i] = ret.get(i);
+        }
+        return bytes;
 
+    }
+
+    public byte[] getPublicKey() {
+        List<Byte> ret = new ArrayList<Byte>();
+        for (byte b : BigInteger.valueOf(getBitLen()).bytes()) {
+            ret.add(b);
+        }
+        for (byte b : n.bytes()) {
+            ret.add(b);
+        }
+        for (byte b : e.bytes()) {
+            ret.add(b);
+        }
+//        for (byte b : d.bytes()) {
+//            ret.add(b);
+//        }
+        byte[] bytes = new byte[ret.size()];
+        for (int i = 0; i < bytes.length; i++) {
+            bytes[i] = ret.get(i);
+        }
+        return bytes;
+
+    }
+
+    public boolean isValidSigned(byte[] signature, byte[] message) {
+        //TODO: think
+        return false;
+    }
 
     public byte[] sign(byte[] message) throws NoSuchAlgorithmException {
         MessageDigest digest = java.security.MessageDigest.getInstance("MD5");
         digest.update(message);
         byte[] hash = digest.digest();
 
-        encrypt(hash, d, n);
+        return encrypt(hash, d, n);
     }
 
     @Override
@@ -114,9 +187,7 @@ public class RSA {
         BigInteger n = lst.get(1);
         BigInteger e = lst.get(2);
         BigInteger d = lst.get(3);
-        RSA ret = new RSA(n, d, e);
-        ret.setBitLen(bitLen.intValue());
-
+        RSA ret = new RSA(n, d, e, bitLen.intValue());
         return ret;
     }
 
