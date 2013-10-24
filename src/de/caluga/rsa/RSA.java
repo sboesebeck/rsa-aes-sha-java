@@ -1,6 +1,9 @@
 package de.caluga.rsa;
 
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
 import java.security.SecureRandom;
+import java.util.List;
 
 /**
  * User: Stephan Bösebeck
@@ -11,6 +14,9 @@ import java.security.SecureRandom;
  */
 public class RSA {
     private BigInteger n, d, e;
+
+    private int bitlen;
+
 
     public RSA(int bitlen) {
         SecureRandom r = new SecureRandom();
@@ -29,13 +35,34 @@ public class RSA {
             } catch (Exception e) {
             }
         }
+        this.bitlen = bitlen;
     }
 
-    public RSA(BigInteger n, BigInteger d, BigInteger e) {
+    public RSA(BigInteger n, BigInteger d, BigInteger e, int bits) {
         this.n = n;
         this.d = d;
         this.e = e;
+        this.bitlen = bits;
     }
+
+    public RSA(byte[] data) {
+//        arr=BigInteger.ser
+    }
+
+    /**
+     * encrypt using public key
+     *
+     * @param message
+     * @return
+     */
+    private byte[] encrypt(byte[] message) {
+        return encrypt(message, e, n);
+    }
+
+    private byte[] encrypt(byte[] message, BigInteger mp, BigInteger mod) {
+        List<BigInteger> bi = BigInteger.getIntegers(message, bitlen);
+    }
+
 
     private BigInteger crypt(BigInteger message, BigInteger mp, BigInteger mod) {
         return message.modPow(mp, mod);
@@ -51,6 +78,15 @@ public class RSA {
 
     //TODO: implement sign - md5 missing
     //TODO: implement isValidSigned - md5 missing
+
+
+    public byte[] sign(byte[] message) throws NoSuchAlgorithmException {
+        MessageDigest digest = java.security.MessageDigest.getInstance("MD5");
+        digest.update(message);
+        byte[] hash = digest.digest();
+
+        encrypt(hash, d, n);
+    }
 
     @Override
     public String toString() {
