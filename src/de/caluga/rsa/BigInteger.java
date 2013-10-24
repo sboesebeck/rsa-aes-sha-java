@@ -1,8 +1,5 @@
 package de.caluga.rsa;
 
-import java.io.IOException;
-import java.io.ObjectInputStream;
-import java.io.ObjectOutputStream;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
@@ -2180,27 +2177,6 @@ public class BigInteger {
         return isNegative() ? x_len * 32 - i : i;
     }
 
-    private void readObject(ObjectInputStream s)
-            throws IOException, ClassNotFoundException {
-        s.defaultReadObject();
-        if (magnitude.length == 0 || signum == 0) {
-            this.ival = 0;
-            this.words = null;
-        } else {
-            words = byteArrayToIntArray(magnitude, signum < 0 ? -1 : 0);
-            BigInteger result = make(words, words.length);
-            this.ival = result.ival;
-            this.words = result.words;
-        }
-    }
-
-    private void writeObject(ObjectOutputStream s)
-            throws IOException, ClassNotFoundException {
-        signum = signum();
-        magnitude = signum == 0 ? new byte[0] : toByteArray();
-        s.defaultWriteObject();
-    }
-
 //
 //    public String getHex() {
 //        String c[] = new String[]{"0", "1", "2", "3", "4", "5", "6", "7", "8", "9", "A", "B", "C", "D", "E", "F"};
@@ -2258,12 +2234,12 @@ public class BigInteger {
 //    }
 
     private static int getIntFrom(byte[] buffer, int idx) {
-        int v = 0;
+        long v = 0;
         v |= buffer[idx + 0] << 24;
         v |= buffer[idx + 1] << 16;
         v |= buffer[idx + 2] << 8;
         v |= buffer[idx + 3];
-        return v;
+        return (int) v;
     }
 
     private static void fillInteger(int v, byte[] buffer) {
@@ -2325,15 +2301,10 @@ public class BigInteger {
         return ret;
     }
 
-    //TODO
-    public static BigInteger fromBytes(byte[] bytes) {
-        throw new RuntimeException("not implemented yet");
-    }
-
     //TODO - check
     public static byte[] getBytes(List<BigInteger> bigInts, int bitLen) {
         List<Byte> ret = new ArrayList<Byte>();
-        byte[] buffer = new byte[4];
+//        byte[] buffer = new byte[4];
         for (int i = 0; i < bigInts.size(); i++) {
 //            buffer[0] = buffer[1] = buffer[2] = buffer[3] = 0;
             //stepping through integers
@@ -2356,73 +2327,12 @@ public class BigInteger {
     }
 
 
-    public static List<BigInteger> getIntegers(byte[] data, int bits) {
+    public static List<BigInteger> deSerializeInts(byte[] data) {
         List<BigInteger> ret = new ArrayList<BigInteger>();
-        int dataSize = (bits - 1) / 32; //bytes for this bitlength allowdd
-        if ((bits - 1) % 32 != 0) {
-            dataSize++;
-        }
-        int numBis = data.length / dataSize / 4;
-        if (data.length % (dataSize * 4) != 0) {
-            numBis++;
-        }
-        int rangeLocation = 0;
-        int rangeLength = 0;
-        while (ret.size() < numBis) {
-            //creating numBis integers
-            List<Integer> numDat = new ArrayList<Integer>();
-            for (int loc = 0; loc < data.length; loc += (dataSize * 4)) {
-                rangeLocation = loc;
-                if (loc + dataSize * 4 > data.length) {
-                    rangeLength = data.length - loc;
-                } else {
-                    rangeLength = dataSize * 4;
-                }
-
-                System.out.println("Got buffer " + rangeLocation + "," + rangeLength);
-
-                for (int i = rangeLocation; i < rangeLocation + rangeLength; i += 4) {
-                    byte c = data[i];
-                    System.out.println("Processing idx " + i + "-" + (i + 4));
-                    int v = c << 24;
-                    if (i + 1 >= rangeLocation + rangeLength) {
-                        numDat.add(0, v);
-                        break;
-                    }
-                    c = data[i + 1];
-                    v |= c << 16;
-
-                    if (i + 2 >= rangeLocation + rangeLength) {
-                        numDat.add(0, v);
-                        break;
-                    }
-                    c = data[i + 2];
-                    v |= c << 8;
-
-                    if (i + 3 >= rangeLocation + rangeLength) {
-                        numDat.add(0, v);
-                        break;
-                    }
-                    c = data[i + 3];
-                    v |= c;
-
-                    numDat.add(0, v);
-                }
-                while (numDat.size() < dataSize) {
-                    numDat.add(0, 0); //padding
-                }
-
-                int[] arr = new int[dataSize];
-                for (int i = 0; i < dataSize; i++) {
-                    arr[i] = numDat.get(i);
-                }
-                BigInteger bi = new BigInteger(arr, numBis);
-                bi.pack();
-
-                System.out.println("Created BigInteger " + bi.toString(16) + " with bitlength " + bi.bitLength() + " -> data size " + bi.words.length);
-                ret.add(bi);
-                numDat.clear();
-            }
+        for (int i = 0; i < data.length; ) {
+            BigInteger bi = new BigInteger();
+            i += BigInteger.fromBytes(bi, data, i);
+            ret.add(bi);
         }
         return ret;
     }
@@ -2492,7 +2402,20 @@ public class BigInteger {
     }
 
 
-    public static List<BigInteger> fromBytes(byte[] data, int bitLen) {
+    public static int fromBytes(BigInteger toSet, byte[] data, int offset) {
+        int length = getIntFrom(data, offset);
+        int nums[] = new int[length / 4];
+        int numIdx = nums.length;
+        for (int idx = offset + 4; idx < offset + length + 4; idx += 4) {
+            int v = getIntFrom(data, idx);
+            nums[--numIdx] = v;
+        }
+        toSet.words = nums;
+        toSet.ival = nums.length;
+        return offset + length + 4;
+    }
+
+    public static List<BigInteger> getIntegersOfBitLength(byte[] data, int bitLen) {
         int dataSize = (bitLen - 1) / 32; //bytes for this bitlength allowdd
         if ((bitLen - 1) % 32 != 0) {
             dataSize++;
