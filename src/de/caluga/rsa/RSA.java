@@ -1,7 +1,6 @@
 package de.caluga.rsa;
 
-import java.security.MessageDigest;
-import java.security.NoSuchAlgorithmException;
+import java.nio.charset.Charset;
 import java.security.SecureRandom;
 import java.util.ArrayList;
 import java.util.List;
@@ -17,6 +16,19 @@ public class RSA {
     private BigInteger n, d, e;
     private int bitLen;
 
+    private String id;
+
+    public RSA() {
+
+    }
+
+    public String getId() {
+        return id;
+    }
+
+    public void setId(String id) {
+        this.id = id;
+    }
 
     public RSA(int bitlen) {
         SecureRandom r = new SecureRandom();
@@ -65,6 +77,9 @@ public class RSA {
     }
 
     private byte[] encrypt(byte[] message, BigInteger mp, BigInteger mod) {
+        if (mp == null || mod == null) {
+            throw new IllegalArgumentException("key not initialized");
+        }
         List<BigInteger> bi = BigInteger.getIntegersOfBitLength(message, bitLen);
         List<Byte> ret = new ArrayList<Byte>();
         for (BigInteger b : bi) {
@@ -134,6 +149,38 @@ public class RSA {
 
     }
 
+    public void setPrivateKey(byte[] b) {
+        List<BigInteger> lst = BigInteger.deSerializeInts(b);
+        if (lst.size() != 3) {
+            throw new IllegalArgumentException("Number of integers wrong");
+        }
+        if (bitLen != 0 && lst.get(0).intValue() != bitLen) {
+            System.out.println("WARNING! bitlength mismatch!");
+        }
+        bitLen = lst.get(0).intValue();
+        if (n != null && !n.equals(lst.get(1))) {
+            throw new IllegalArgumentException("Key mismatch!");
+        }
+        n = lst.get(1);
+        d = lst.get(2);
+    }
+
+    public void setPublicKey(byte[] b) {
+        List<BigInteger> lst = BigInteger.deSerializeInts(b);
+        if (lst.size() != 3) {
+            throw new IllegalArgumentException("Number of integers wrong");
+        }
+        if (bitLen != 0 && lst.get(0).intValue() != bitLen) {
+            System.out.println("WARNING! bitlength mismatch!");
+        }
+        bitLen = lst.get(0).intValue();
+        if (n != null && !n.equals(lst.get(1))) {
+            throw new IllegalArgumentException("Key mismatch!");
+        }
+        n = lst.get(1);
+        e = lst.get(2);
+    }
+
     public byte[] getPublicKey() {
         List<Byte> ret = new ArrayList<Byte>();
         for (byte b : BigInteger.valueOf(getBitLen()).bytes()) {
@@ -157,22 +204,33 @@ public class RSA {
     }
 
     public boolean isValidSigned(byte[] signature, byte[] message) {
-        //TODO: think
-        return false;
+        byte[] sign = sign(message);
+        if (sign.length != signature.length) {
+            return false;
+        }
+        String signHex = Utils.getHex(sign);
+        String signatureHex = Utils.getHex(signature);
+        if (!signatureHex.equals(signHex)) {
+            return false;
+        }
+        //decode with public key...
+        byte[] decodedSignature = decrypt(signature, e, n);
+        String md5 = new String(decodedSignature, Charset.forName("UTF8"));
+        return md5.equals(Utils.getMd5String(message));
     }
 
-    public byte[] sign(byte[] message) throws NoSuchAlgorithmException {
-        MessageDigest digest = java.security.MessageDigest.getInstance("MD5");
-        digest.update(message);
-        byte[] hash = digest.digest();
 
-        return encrypt(hash, d, n);
+    public byte[] sign(byte[] message) {
+        String md5 = Utils.getMd5String(message);
+        return encrypt(md5.getBytes(Charset.forName("UTF8")), d, n);
     }
 
     @Override
     public String toString() {
-        return "RSA{" +
-                "n=" + n +
+        return "RSA{ " +
+                "id='" + id + "'" +
+                "bitLen=" + bitLen +
+                " n=" + n +
                 ", d=" + d +
                 ", e=" + e +
                 '}';
@@ -191,6 +249,10 @@ public class RSA {
         return ret;
     }
 
+
+    public byte[] encrypt(String txt) {
+        return encrypt(txt.getBytes(Charset.forName("UTF8")));
+    }
 
     public byte[] bytes() {
         List<Byte> ret = new ArrayList<Byte>();
@@ -213,5 +275,13 @@ public class RSA {
         return bytes;
     }
 
+
+    public boolean hasPublicKey() {
+        return n != null && e != null;
+    }
+
+    public boolean hasPrivateKey() {
+        return n != null && d != null;
+    }
 
 }

@@ -1065,7 +1065,7 @@ public class BigInteger {
                 System.out.println("Found it!");
             }
             divide(a, b, quot, rem, FLOOR);
-            System.out.println("A:" + a + " / b:" + b + " = " + quot + " rem: " + rem + " iVal:" + rem.getIval());
+//            System.out.println("A:" + a + " / b:" + b + " = " + quot + " rem: " + rem + " iVal:" + rem.getIval());
             // quot and rem may not be in canonical form. ensure
             rem.canonicalize();
             quot.canonicalize();
