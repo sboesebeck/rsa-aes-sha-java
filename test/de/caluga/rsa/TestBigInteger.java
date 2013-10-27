@@ -35,6 +35,14 @@ public class TestBigInteger {
         assert (res2.equals(int1));
     }
 
+    @Test
+    public void encryptDecryptSingleTest() {
+        RSA r = new RSA(512);
+        BigInteger message = new BigInteger(128, new SecureRandom());
+        BigInteger enc = r.encrypt(message);
+        BigInteger dec = r.decrypt(enc);
+        assert (dec.equals(message));
+    }
 
     @Test
     public void encryptDecryptTest() {
@@ -62,27 +70,25 @@ public class TestBigInteger {
 
     @Test
     public void communicationTest() {
-        RSA client1 = new RSA(512);
-        RSA client2 = new RSA(512);
-//        byte[] client1PublicKey=client1.getPublicKeyBytes();
+        RSA serverKeyPair = new RSA(256);
+        RSA clientKeypair = new RSA(128);
 
-        //client1 sends message to client2
-        byte[] client2PublicKey = client2.getPublicKeyBytes();
+        //server Sends public-Key:
+        byte[] serverPubKey = serverKeyPair.getPublicKeyBytes();
 
-        //client1 has publickey
-        RSA pubKeyClient2 = new RSA();
-        pubKeyClient2.setPublicKeyBytes(client2PublicKey);
+        //client reads them
+        RSA serverPubKeyRsa = RSA.publicKey(serverPubKey);
 
-        //encrypt message
-        String message = "The secret message";
-        byte enc[] = pubKeyClient2.encrypt(message);
+        //now encoding clients publicKey
+        byte[] publicKeyBytes = clientKeypair.getPublicKeyBytes();
+        byte[] pubkEncoded = serverPubKeyRsa.encrypt(publicKeyBytes);
 
-        ///===>> message then transferred to client2
-        byte[] dec = client2.decrypt(enc);
-        String decoded = new String(dec, Charset.forName("UTF8"));
-
-        assert (decoded.equals(message));
+        //server gets encoded Public KEy => decoding
+        byte[] decoededPublicKey = serverKeyPair.decrypt(pubkEncoded);
+        RSA clientPubKey = RSA.publicKey(decoededPublicKey);
 
 
     }
+
+
 }

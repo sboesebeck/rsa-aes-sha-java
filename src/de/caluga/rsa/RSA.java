@@ -250,6 +250,12 @@ public class RSA {
                 '}';
     }
 
+    public static RSA publicKey(byte[] data) {
+        RSA ret = new RSA();
+        ret.setPublicKeyBytes(data);
+        return ret;
+    }
+
     public static RSA fromBytes(byte[] data) {
         List<BigInteger> lst = BigInteger.deSerializeInts(data);
         if (lst.size() != 4) {

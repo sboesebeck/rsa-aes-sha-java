@@ -2429,31 +2429,31 @@ public class BigInteger {
                 for (int i = rangeLocation; i < rangeLocation + rangeLength; i += 4) {
                     byte c = data[i];
 //                NSLog(@"Processing idx %d-%d", i, i + 4);
-                    int v = c << 24;
+                    long v = (((long) c & 0xff)) << 24;
                     if (i + 1 >= rangeLocation + rangeLength) {
-                        numDat[numDatIdx--] = v;
+                        numDat[numDatIdx--] = (int) (v & 0xffffffff);
                         skip = 24;
                         break;
                     }
                     c = data[i + 1];
-                    v |= c << 16;
+                    v |= (((long) c & 0xff)) << 16;
 
                     if (i + 2 >= rangeLocation + rangeLength) {
-                        numDat[numDatIdx--] = v;
+                        numDat[numDatIdx--] = (int) (v & 0xffffffff);
                         skip = 16;
                         break;
                     }
                     c = data[i + 2];
-                    v |= c << 8;
+                    v |= (((long) c & 0xff)) << 8;
 
                     if (i + 3 >= rangeLocation + rangeLength) {
-                        numDat[numDatIdx--] = v;
+                        numDat[numDatIdx--] = (int) (v & 0xffffffff);
                         skip = 8;
                         break;
                     }
                     c = data[i + 3];
-                    v |= c;
-                    numDat[numDatIdx--] = v;
+                    v |= (((long) c & 0xff));
+                    numDat[numDatIdx--] = (int) (v & 0xffffffff);
                     skip = 0;
                 }
                 BigInteger bi = new BigInteger(numDat, dataSize);
