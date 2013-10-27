@@ -64,14 +64,14 @@ public class TestBigInteger {
     public void communicationTest() {
         RSA client1 = new RSA(512);
         RSA client2 = new RSA(512);
-//        byte[] client1PublicKey=client1.getPublicKey();
+//        byte[] client1PublicKey=client1.getPublicKeyBytes();
 
         //client1 sends message to client2
-        byte[] client2PublicKey = client2.getPublicKey();
+        byte[] client2PublicKey = client2.getPublicKeyBytes();
 
         //client1 has publickey
         RSA pubKeyClient2 = new RSA();
-        pubKeyClient2.setPublicKey(client2PublicKey);
+        pubKeyClient2.setPublicKeyBytes(client2PublicKey);
 
         //encrypt message
         String message = "The secret message";

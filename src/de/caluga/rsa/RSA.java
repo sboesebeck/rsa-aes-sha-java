@@ -59,6 +59,20 @@ public class RSA {
     }
 
 
+    public RSA getPrivateKey() {
+        RSA ret = new RSA();
+        ret.n = this.n;
+        ret.d = this.d;
+        return ret;
+    }
+
+    public RSA getPublicKey() {
+        RSA ret = new RSA();
+        ret.n = this.n;
+        ret.e = this.e;
+        return ret;
+    }
+
     public RSA(BigInteger n, BigInteger d, BigInteger e, int bits) {
         this.n = n;
         this.d = d;
@@ -127,7 +141,7 @@ public class RSA {
         return crypt(message, d, n);
     }
 
-    public byte[] getPrivateKey() {
+    public byte[] getPrivateKeyBytes() {
         List<Byte> ret = new ArrayList<Byte>();
         for (byte b : BigInteger.valueOf(getBitLen()).bytes()) {
             ret.add(b);
@@ -149,7 +163,7 @@ public class RSA {
 
     }
 
-    public void setPrivateKey(byte[] b) {
+    public void setPrivateKeyBytes(byte[] b) {
         List<BigInteger> lst = BigInteger.deSerializeInts(b);
         if (lst.size() != 3) {
             throw new IllegalArgumentException("Number of integers wrong");
@@ -165,7 +179,7 @@ public class RSA {
         d = lst.get(2);
     }
 
-    public void setPublicKey(byte[] b) {
+    public void setPublicKeyBytes(byte[] b) {
         List<BigInteger> lst = BigInteger.deSerializeInts(b);
         if (lst.size() != 3) {
             throw new IllegalArgumentException("Number of integers wrong");
@@ -181,7 +195,7 @@ public class RSA {
         e = lst.get(2);
     }
 
-    public byte[] getPublicKey() {
+    public byte[] getPublicKeyBytes() {
         List<Byte> ret = new ArrayList<Byte>();
         for (byte b : BigInteger.valueOf(getBitLen()).bytes()) {
             ret.add(b);
