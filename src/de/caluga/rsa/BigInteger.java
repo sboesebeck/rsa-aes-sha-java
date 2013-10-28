@@ -2339,7 +2339,7 @@ public class BigInteger {
             BigInteger integer = lst.get(i);
             //stepping through integers
             boolean simple = false;
-            boolean skip = true;
+            boolean skip = false;
             for (int j = integer.ival - 1; j >= 0; j--) {
                 long v = integer.ival;
                 if (integer.words == null || integer.words.length == 0) {
@@ -2409,6 +2409,7 @@ public class BigInteger {
         int rangeLocation = 0;
         int rangeLength = 0;
         int skip = 0;
+        int skipInts = 0;
 //    NSLog(@"ints allowed %d, own key length %d Bit, number of BigIntegers %d => Length of self to decode %d byte", dataSize, bitLen, numBis, (int) self.length);
         List<BigInteger> ret = new ArrayList<BigInteger>();
 
@@ -2425,18 +2426,18 @@ public class BigInteger {
                 }
 
 //            NSLog(@"Got buffer %d, %d    %@", range.location, range.length, [[NSData dataWithBytes:(buffer + range.location) length:range.length] hexDump:NO]);
-
-                for (int i = rangeLocation; i < rangeLocation + rangeLength; i += 4) {
+                int i = 0;
+                for (i = rangeLocation; i < rangeLocation + rangeLength; i += 4) {
                     byte c = data[i];
 //                NSLog(@"Processing idx %d-%d", i, i + 4);
-                    long v = (((long) c & 0xff)) << 24;
+                    long v = (long) (c & 0xff) << 24;
                     if (i + 1 >= rangeLocation + rangeLength) {
                         numDat[numDatIdx--] = (int) (v & 0xffffffff);
                         skip = 24;
                         break;
                     }
                     c = data[i + 1];
-                    v |= (((long) c & 0xff)) << 16;
+                    v |= (long) (c & 0xff) << 16;
 
                     if (i + 2 >= rangeLocation + rangeLength) {
                         numDat[numDatIdx--] = (int) (v & 0xffffffff);
@@ -2444,7 +2445,7 @@ public class BigInteger {
                         break;
                     }
                     c = data[i + 2];
-                    v |= (((long) c & 0xff)) << 8;
+                    v |= (long) (c & 0xff) << 8;
 
                     if (i + 3 >= rangeLocation + rangeLength) {
                         numDat[numDatIdx--] = (int) (v & 0xffffffff);
@@ -2452,11 +2453,18 @@ public class BigInteger {
                         break;
                     }
                     c = data[i + 3];
-                    v |= (((long) c & 0xff));
+                    v |= (long) (c & 0xff);
                     numDat[numDatIdx--] = (int) (v & 0xffffffff);
                     skip = 0;
                 }
                 BigInteger bi = new BigInteger(numDat, dataSize);
+                if (numDatIdx > -1) {
+                    numDatIdx += 1;
+                    int arr[] = new int[bi.ival - numDatIdx];
+                    System.arraycopy(bi.words, numDatIdx, arr, 0, arr.length);
+                    bi.words = arr;
+                    bi.ival = arr.length;
+                }
                 bi.pack();
                 ret.add(bi);
             }

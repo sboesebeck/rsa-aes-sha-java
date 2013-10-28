@@ -70,8 +70,8 @@ public class TestBigInteger {
 
     @Test
     public void communicationTest() {
-        RSA serverKeyPair = new RSA(256);
-        RSA clientKeypair = new RSA(128);
+        RSA serverKeyPair = new RSA(2048);
+        RSA clientKeypair = new RSA(512);
 
         //server Sends public-Key:
         byte[] serverPubKey = serverKeyPair.getPublicKeyBytes();
@@ -86,7 +86,18 @@ public class TestBigInteger {
         //server gets encoded Public KEy => decoding
         byte[] decoededPublicKey = serverKeyPair.decrypt(pubkEncoded);
         RSA clientPubKey = RSA.publicKey(decoededPublicKey);
+        assert (clientPubKey.getN().equals(clientKeypair.getN()));
+        assert (clientPubKey.getE().equals(clientKeypair.getE()));
 
+        String aMessage = "This is a simple Message for the client, sent by server";
+        for (int i = 0; i < 10; i++) aMessage += aMessage;
+
+        byte[] encodedMessage = clientPubKey.encrypt(aMessage);
+
+        //on client, receive answer
+        byte[] decodedMessage = clientKeypair.decrypt(encodedMessage);
+        String receivedMessage = new String(decodedMessage, Charset.forName("UTF8"));
+        assert (receivedMessage.equals(aMessage));
 
     }
 

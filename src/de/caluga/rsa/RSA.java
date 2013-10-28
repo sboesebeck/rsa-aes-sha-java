@@ -50,6 +50,18 @@ public class RSA {
         this.bitLen = bitlen;
     }
 
+    public BigInteger getN() {
+        return n;
+    }
+
+    public BigInteger getD() {
+        return d;
+    }
+
+    public BigInteger getE() {
+        return e;
+    }
+
     public int getBitLen() {
         return bitLen;
     }
