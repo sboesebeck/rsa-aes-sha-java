@@ -2,7 +2,6 @@ package de.caluga.rsa;
 
 import org.junit.Test;
 
-import java.nio.charset.Charset;
 import java.security.SecureRandom;
 
 /**
@@ -36,70 +35,33 @@ public class TestBigInteger {
     }
 
     @Test
-    public void encryptDecryptSingleTest() {
-        RSA r = new RSA(512);
-        BigInteger message = new BigInteger(128, new SecureRandom());
-        BigInteger enc = r.encrypt(message);
-        BigInteger dec = r.decrypt(enc);
-        assert (dec.equals(message));
+    public void testMultShift() {
+        SecureRandom rnd = new SecureRandom();
+        BigInteger int1 = new BigInteger(512, rnd);
+        BigInteger int2 = int1.multiply(BigInteger.valueOf(2));
+        BigInteger int3 = int1.shiftLeft(1);
+        assert (int2.equals(int3));
+    }
+
+
+    @Test
+    public void testDivShift() {
+        SecureRandom rnd = new SecureRandom();
+        BigInteger int1 = new BigInteger(512, rnd);
+        BigInteger int2 = int1.divide(BigInteger.valueOf(2));
+        BigInteger int3 = int1.shiftRight(1);
+        assert (int2.equals(int3));
     }
 
     @Test
-    public void encryptDecryptTest() {
-        RSA r = new RSA(512);
-        String message = "A testmessage! A Testmessage!";
-        for (int i = 0; i < 10; i++) {
-            message += message;
-        }
-        byte[] enc = r.encrypt(message);
-        byte[] dec = r.decrypt(enc);
-        String decoded = new String(dec, Charset.forName("UTF8"));
-        assert (decoded.equals(message));
+    public void testPow() {
+        BigInteger int1 = new BigInteger("affe", 16);
+        BigInteger int2 = int1.pow(2);
+        BigInteger int3 = int1.multiply(int1);
+
+        BigInteger result = new BigInteger("78FD4004", 16);
+        assert (int2.equals(int3));
+        assert (int3.equals(result));
     }
-
-    @Test
-    public void signingTest() {
-        RSA r = new RSA(512);
-        String message = "A testmessage! A Testmessage!";
-
-        byte[] sign = r.sign(message.getBytes(Charset.forName("UTF8")));
-        assert (r.isValidSigned(sign, message.getBytes(Charset.forName("UTF8"))));
-        message = "different";
-        assert (!r.isValidSigned(sign, message.getBytes(Charset.forName("UTF8"))));
-    }
-
-    @Test
-    public void communicationTest() {
-        RSA serverKeyPair = new RSA(2048);
-        RSA clientKeypair = new RSA(512);
-
-        //server Sends public-Key:
-        byte[] serverPubKey = serverKeyPair.getPublicKeyBytes();
-
-        //client reads them
-        RSA serverPubKeyRsa = RSA.publicKey(serverPubKey);
-
-        //now encoding clients publicKey
-        byte[] publicKeyBytes = clientKeypair.getPublicKeyBytes();
-        byte[] pubkEncoded = serverPubKeyRsa.encrypt(publicKeyBytes);
-
-        //server gets encoded Public KEy => decoding
-        byte[] decoededPublicKey = serverKeyPair.decrypt(pubkEncoded);
-        RSA clientPubKey = RSA.publicKey(decoededPublicKey);
-        assert (clientPubKey.getN().equals(clientKeypair.getN()));
-        assert (clientPubKey.getE().equals(clientKeypair.getE()));
-
-        String aMessage = "This is a simple Message for the client, sent by server";
-        for (int i = 0; i < 10; i++) aMessage += aMessage;
-
-        byte[] encodedMessage = clientPubKey.encrypt(aMessage);
-
-        //on client, receive answer
-        byte[] decodedMessage = clientKeypair.decrypt(encodedMessage);
-        String receivedMessage = new String(decodedMessage, Charset.forName("UTF8"));
-        assert (receivedMessage.equals(aMessage));
-
-    }
-
 
 }
