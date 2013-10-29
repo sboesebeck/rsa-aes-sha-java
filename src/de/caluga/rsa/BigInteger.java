@@ -12,20 +12,6 @@ import java.util.Random;
  * TODO: Add documentation here
  */
 public class BigInteger {
-    /**
-     * All integers are stored in 2's-complement form.
-     * If words == null, the ival is the value of this BigInteger.
-     * Otherwise, the first ival elements of words make the value
-     * of this BigInteger, stored in little-endian order, 2's-complement form.
-     */
-    private transient int ival;
-    private transient int[] words;
-
-
-    /**
-     * We pre-allocate integers in the range minFixNum..maxFixNum.
-     * Note that we must at least preallocate 0, 1, and 10.
-     */
     private static final int minFixNum = -100;
     private static final int maxFixNum = 2048;
     private static final int numFixNum = maxFixNum - minFixNum + 1;
@@ -36,49 +22,36 @@ public class BigInteger {
             smallFixNums[i] = new BigInteger(i + minFixNum);
     }
 
-    public int getIval() {
-        return ival;
-    }
-
-    public void setIval(int ival) {
-        this.ival = ival;
-    }
-
-    public int[] getWords() {
-        return words;
-    }
-
-    public void setWords(int[] words) {
-        this.words = words;
-    }
-
     /**
      * The constant zero as a BigInteger.
      *
      * @since 1.2
      */
     public static final BigInteger ZERO = smallFixNums[0 - minFixNum];
-
     /**
      * The constant one as a BigInteger.
      *
      * @since 1.2
      */
     public static final BigInteger ONE = smallFixNums[1 - minFixNum];
-
     /**
      * The constant ten as a BigInteger.
      *
      * @since 1.5
      */
     public static final BigInteger TEN = smallFixNums[10 - minFixNum];
+    /**
+     * We pre-allocate integers in the range minFixNum..maxFixNum.
+     * Note that we must at least preallocate 0, 1, and 10.
+     */
+
+
 
     /* Rounding modes: */
     private static final int FLOOR = 1;
     private static final int CEILING = 2;
     private static final int TRUNCATE = 3;
     private static final int ROUND = 4;
-
     /**
      * When checking the probability of primes, it is most efficient to
      * first check the factoring of small primes, so we'll use this array.
@@ -155,7 +128,6 @@ public class BigInteger {
 /*Primes*/       5281, 5297, 5303, 5309, 5323, 5333, 5347, 5351, 5381, 5387,
 /*Primes*/       5393, 5399, 5407, 5413, 5417, 5419, 5431, 5437, 5441, 5443,
 /*Primes*/       5449, 5471, 5477, 5479, 5483, 5501, 5503, 5507, 5519, 5521};
-
     /**
      * HAC (Handbook of Applied Cryptography), Alfred Menezes & al. Table 4.4.
      */
@@ -163,6 +135,17 @@ public class BigInteger {
             {100, 150, 200, 250, 300, 350, 400, 500, 600, 800, 1250, Integer.MAX_VALUE};
     private static final int[] t =
             {27, 18, 15, 12, 9, 8, 7, 6, 5, 4, 3, 2};
+    // bit4count[I] is number of '1' bits in I.
+    private static final byte[] bit4_count = {0, 1, 1, 2, 1, 2, 2, 3,
+            1, 2, 2, 3, 2, 3, 3, 4};
+    /**
+     * All integers are stored in 2's-complement form.
+     * If words == null, the ival is the value of this BigInteger.
+     * Otherwise, the first ival elements of words make the value
+     * of this BigInteger, stored in little-endian order, 2's-complement form.
+     */
+    private transient int ival;
+    private transient int[] words;
 
     private BigInteger() {
     }
@@ -223,39 +206,6 @@ public class BigInteger {
         init(numBits, rnd);
     }
 
-    private void init(int numBits, Random rnd) {
-        int highbits = numBits & 31;
-        // minimum number of serialize to store the above number of bits
-        int highBitByteCount = (highbits + 7) / 8;
-        // number of bits to discard from the last byte
-        int discardedBitCount = highbits % 8;
-        if (discardedBitCount != 0)
-            discardedBitCount = 8 - discardedBitCount;
-        byte[] highBitBytes = new byte[highBitByteCount];
-        if (highbits > 0) {
-            rnd.nextBytes(highBitBytes);
-            highbits = (highBitBytes[highBitByteCount - 1] & 0xFF) >>> discardedBitCount;
-            for (int i = highBitByteCount - 2; i >= 0; i--)
-                highbits = (highbits << 8) | (highBitBytes[i] & 0xFF);
-        }
-        int nwords = numBits / 32;
-
-        while (highbits == 0 && nwords > 0) {
-            highbits = rnd.nextInt();
-            --nwords;
-        }
-        if (nwords == 0 && highbits >= 0) {
-            ival = highbits;
-            words = null;
-        } else {
-            ival = highbits < 0 ? nwords + 2 : nwords + 1;
-            words = new int[ival];
-            words[nwords] = highbits;
-            while (--nwords >= 0)
-                words[nwords] = rnd.nextInt();
-        }
-    }
-
     public BigInteger(int bitLength, int certainty, Random rnd) {
         this(bitLength, rnd);
         int tries = 0;
@@ -274,6 +224,11 @@ public class BigInteger {
 
             init(bitLength, rnd);
         }
+    }
+
+    public BigInteger(int[] words, int iVal) {
+        this.words = words;
+        this.ival = iVal;
     }
 
     /**
@@ -360,44 +315,6 @@ public class BigInteger {
         return result;
     }
 
-    /**
-     * Change words.length to nwords.
-     * We allow words.length to be upto nwords+2 without reallocating.
-     */
-    private void realloc(int nwords) {
-        if (nwords == 0) {
-            if (words != null) {
-                if (ival > 0)
-                    ival = words[0];
-                words = null;
-            }
-        } else if (words == null
-                || words.length < nwords
-                || words.length > nwords + 2) {
-            int[] new_words = new int[nwords];
-            if (words == null) {
-                new_words[0] = ival;
-                ival = 1;
-            } else {
-                if (nwords < ival)
-                    ival = nwords;
-                System.arraycopy(words, 0, new_words, 0, ival);
-            }
-            words = new_words;
-        }
-    }
-
-    protected boolean isNegative() {
-        return (words == null ? ival : words[ival - 1]) < 0;
-    }
-
-    public int signum() {
-        if (ival == 0 && words == null)
-            return 0;
-        int top = words == null ? ival : words[ival - 1];
-        return top < 0 ? -1 : 1;
-    }
-
     private static int compareTo(BigInteger x, BigInteger y) {
         if (x.words == null && y.words == null)
             return x.ival < y.ival ? -1 : x.ival > y.ival ? 1 : 0;
@@ -410,29 +327,6 @@ public class BigInteger {
         if (x_len != y_len)
             return (x_len > y_len) != x_negative ? 1 : -1;
         return MPN.cmp(x.words, y.words, x_len);
-    }
-
-    /**
-     * @since 1.2
-     */
-    public int compareTo(BigInteger val) {
-        return compareTo(this, val);
-    }
-
-    public BigInteger min(BigInteger val) {
-        return compareTo(this, val) < 0 ? this : val;
-    }
-
-    public BigInteger max(BigInteger val) {
-        return compareTo(this, val) > 0 ? this : val;
-    }
-
-    public boolean isZero() {
-        return words == null && ival == 0;
-    }
-
-    public boolean isOne() {
-        return words == null && ival == 1;
     }
 
     /**
@@ -456,18 +350,6 @@ public class BigInteger {
         return i + 1;
     }
 
-    private BigInteger canonicalize() {
-        if (words != null
-                && (ival = BigInteger.wordsNeeded(words, ival)) <= 1) {
-            if (ival == 1)
-                ival = words[0];
-            words = null;
-        }
-        if (words == null && ival >= minFixNum && ival <= maxFixNum)
-            return smallFixNums[ival - minFixNum];
-        return this;
-    }
-
     /**
      * Add two ints, yielding a BigInteger.
      */
@@ -484,74 +366,6 @@ public class BigInteger {
         BigInteger result = new BigInteger(0);
         result.setAdd(x, y);
         return result.canonicalize();
-    }
-
-    /**
-     * Set this to the sum of x and y.
-     * OK if x==this.
-     */
-    private void setAdd(BigInteger x, int y) {
-        if (x.words == null) {
-            set((long) x.ival + (long) y);
-            return;
-        }
-        int len = x.ival;
-        realloc(len + 1);
-        long carry = y;
-        for (int i = 0; i < len; i++) {
-            carry += ((long) x.words[i] & 0xffffffffL);
-            words[i] = (int) carry;
-            carry >>= 32;
-        }
-        if (x.words[len - 1] < 0)
-            carry--;
-        words[len] = (int) carry;
-        ival = wordsNeeded(words, len + 1);
-    }
-
-    /**
-     * Destructively add an int to this.
-     */
-    private void setAdd(int y) {
-        setAdd(this, y);
-    }
-
-    /**
-     * Destructively set the value of this to a long.
-     */
-    private void set(long y) {
-        int i = (int) y;
-        if ((long) i == y) {
-            ival = i;
-            words = null;
-        } else {
-            realloc(2);
-            words[0] = i;
-            words[1] = (int) (y >> 32);
-            ival = 2;
-        }
-    }
-
-    /**
-     * Destructively set the value of this to the given words.
-     * The words array is reused, not copied.
-     */
-    private void set(int[] words, int length) {
-        this.ival = length;
-        this.words = words;
-    }
-
-    /**
-     * Destructively set the value of this to that of y.
-     */
-    private void set(BigInteger y) {
-        if (y.words == null)
-            set(y.ival);
-        else if (this != y) {
-            realloc(y.ival);
-            System.arraycopy(y.words, 0, words, 0, y.ival);
-            ival = y.ival;
-        }
     }
 
     /**
@@ -590,14 +404,6 @@ public class BigInteger {
         result.words[i] = (int) (carry + y_ext);
         result.ival = i + 1;
         return result.canonicalize();
-    }
-
-    public BigInteger add(BigInteger val) {
-        return add(this, val, 1);
-    }
-
-    public BigInteger subtract(BigInteger val) {
-        return add(this, val, -1);
     }
 
     private static BigInteger times(BigInteger x, int y) {
@@ -667,10 +473,6 @@ public class BigInteger {
         if (negative)
             result.setNegative();
         return result.canonicalize();
-    }
-
-    public BigInteger multiply(BigInteger y) {
-        return times(this, y);
     }
 
     private static void divide(long x, long y,
@@ -916,103 +718,6 @@ public class BigInteger {
         }
     }
 
-    public BigInteger(int[] words, int iVal) {
-        this.words = words;
-        this.ival = iVal;
-    }
-
-    public BigInteger divide(BigInteger val) {
-        if (val.isZero())
-            throw new ArithmeticException("divisor is zero");
-
-        BigInteger quot = new BigInteger();
-        divide(this, val, quot, null, TRUNCATE);
-        return quot.canonicalize();
-    }
-
-    public BigInteger remainder(BigInteger val) {
-        if (val.isZero())
-            throw new ArithmeticException("divisor is zero");
-
-        BigInteger rem = new BigInteger();
-        divide(this, val, null, rem, TRUNCATE);
-        return rem.canonicalize();
-    }
-
-    public BigInteger[] divideAndRemainder(BigInteger val) {
-        if (val.isZero())
-            throw new ArithmeticException("divisor is zero");
-
-        BigInteger[] result = new BigInteger[2];
-        result[0] = new BigInteger();
-        result[1] = new BigInteger();
-        divide(this, val, result[0], result[1], TRUNCATE);
-        result[0].canonicalize();
-        result[1].canonicalize();
-        return result;
-    }
-
-    public BigInteger mod(BigInteger m) {
-        if (m.isNegative() || m.isZero())
-            throw new ArithmeticException("non-positive modulus");
-
-        BigInteger rem = new BigInteger();
-        divide(this, m, null, rem, FLOOR);
-        return rem.canonicalize();
-    }
-
-    /**
-     * Calculate the integral power of a BigInteger.
-     *
-     * @param exponent the exponent (must be non-negative)
-     */
-    public BigInteger pow(int exponent) {
-        if (exponent <= 0) {
-            if (exponent == 0)
-                return ONE;
-            throw new ArithmeticException("negative exponent");
-        }
-        if (isZero())
-            return this;
-        int plen = words == null ? 1 : ival;  // Length of pow2.
-        int blen = ((bitLength() * exponent) >> 5) + 2 * plen;
-        boolean negative = isNegative() && (exponent & 1) != 0;
-        int[] pow2 = new int[blen];
-        int[] rwords = new int[blen];
-        int[] work = new int[blen];
-        getAbsolute(pow2);    // pow2 = abs(this);
-        int rlen = 1;
-        rwords[0] = 1; // rwords = 1;
-        for (; ; )  // for (i = 0;  ; i++)
-        {
-            // pow2 == this**(2**i)
-            // prod = this**(sum(j=0..i-1, (exponent>>j)&1))
-            if ((exponent & 1) != 0) { // r *= pow2
-                MPN.mul(work, pow2, plen, rwords, rlen);
-                int[] temp = work;
-                work = rwords;
-                rwords = temp;
-                rlen += plen;
-                while (rwords[rlen - 1] == 0) rlen--;
-            }
-            exponent >>= 1;
-            if (exponent == 0)
-                break;
-            // pow2 *= pow2;
-            MPN.mul(work, pow2, plen, pow2, plen);
-            int[] temp = work;
-            work = pow2;
-            pow2 = temp;  // swap to avoid a copy
-            plen *= 2;
-            while (pow2[plen - 1] == 0) plen--;
-        }
-        if (rwords[rlen - 1] < 0)
-            rlen++;
-        if (negative)
-            negate(rwords, rwords, rlen);
-        return BigInteger.make(rwords, rlen);
-    }
-
     private static int[] euclidInv(int a, int b, int prevDiv) {
         if (b == 0)
             throw new ArithmeticException("not invertible");
@@ -1068,115 +773,6 @@ public class BigInteger {
         xy[1] = t;
     }
 
-    public BigInteger modInverse(BigInteger y) {
-        if (y.isNegative() || y.isZero())
-            throw new ArithmeticException("non-positive modulo");
-
-        // Degenerate cases.
-        if (y.isOne())
-            return ZERO;
-        if (isOne())
-            return ONE;
-
-        // Use Euclid's algorithm as in gcd() but do this recursively
-        // rather than in a loop so we can use the intermediate results as we
-        // unwind from the recursion.
-        // Used http://www.math.nmsu.edu/~crypto/EuclideanAlgo.html as reference.
-        BigInteger result = new BigInteger();
-        boolean swapped = false;
-
-        if (y.words == null) {
-            // The result is guaranteed to be less than the modulus, y (which is
-            // an int), so simplify this by working with the int result of this
-            // modulo y.  Also, if this is negative, make it positive via modulo
-            // math.  Note that BigInteger.mod() must be used even if this is
-            // already an int as the % operator would provide a negative result if
-            // this is negative, BigInteger.mod() never returns negative values.
-            int xval = (words != null || isNegative()) ? mod(y).ival : ival;
-            int yval = y.ival;
-
-            // Swap values so x > y.
-            if (yval > xval) {
-                int tmp = xval;
-                xval = yval;
-                yval = tmp;
-                swapped = true;
-            }
-            // Normally, the result is in the 2nd element of the array, but
-            // if originally x < y, then x and y were swapped and the result
-            // is in the 1st element of the array.
-            result.ival =
-                    euclidInv(yval, xval % yval, xval / yval)[swapped ? 0 : 1];
-
-            // Result can't be negative, so make it positive by adding the
-            // original modulus, y.ival (not the possibly "swapped" yval).
-            if (result.ival < 0)
-                result.ival += y.ival;
-        } else {
-            // As above, force this to be a positive value via modulo math.
-            BigInteger x = isNegative() ? this.mod(y) : this;
-
-            // Swap values so x > y.
-            if (x.compareTo(y) < 0) {
-                result = x;
-                x = y;
-                y = result; // use 'result' as a work var
-                swapped = true;
-            }
-            // As above (for ints), result will be in the 2nd element unless
-            // the original x and y were swapped.
-            BigInteger rem = new BigInteger();
-            BigInteger quot = new BigInteger();
-            divide(x, y, quot, rem, FLOOR);
-            // quot and rem may not be in canonical form. ensure
-            rem.canonicalize();
-            quot.canonicalize();
-            BigInteger[] xy = new BigInteger[2];
-            euclidInv(y, rem, quot, xy);
-            result = swapped ? xy[0] : xy[1];
-
-            // Result can't be negative, so make it positive by adding the
-            // original modulus, y (which is now x if they were swapped).
-            if (result.isNegative())
-                result = add(result, swapped ? x : y, 1);
-        }
-
-        return result;
-    }
-
-    public BigInteger modPow(BigInteger exponent, BigInteger m) {
-        if (m.isNegative() || m.isZero())
-            throw new ArithmeticException("non-positive modulo");
-
-        if (exponent.isNegative())
-            return modInverse(m).modPow(exponent.negate(), m);
-        if (exponent.isOne())
-            return mod(m);
-
-        // To do this naively by first raising this to the power of exponent
-        // and then performing modulo m would be extremely expensive, especially
-        // for very large numbers.  The solution is found in Number Theory
-        // where a combination of partial powers and moduli can be done easily.
-        //
-        // We'll use the algorithm for Additive Chaining which can be found on
-        // p. 244 of "Applied Cryptography, Second Edition" by Bruce Schneier.
-        BigInteger s = ONE;
-        BigInteger t = this;
-        BigInteger u = exponent;
-        int runcounter = 0;
-        while (!u.isZero()) {
-            runcounter++;
-            if (u.and(ONE).isOne()) {
-                BigInteger tmp = times(s, t);
-                s = tmp.mod(m);
-            }
-            u = u.shiftRight(1);
-            t = times(t, t).mod(m);
-        }
-
-        return s;
-    }
-
     /**
      * Calculate Greatest Common Divisor for non-negative ints.
      */
@@ -1199,204 +795,6 @@ public class BigInteger {
         }
     }
 
-    public BigInteger gcd(BigInteger y) {
-        int xval = ival;
-        int yval = y.ival;
-        if (words == null) {
-            if (xval == 0)
-                return abs(y);
-            if (y.words == null
-                    && xval != Integer.MIN_VALUE && yval != Integer.MIN_VALUE) {
-                if (xval < 0)
-                    xval = -xval;
-                if (yval < 0)
-                    yval = -yval;
-                return valueOf(gcd(xval, yval));
-            }
-            xval = 1;
-        }
-        if (y.words == null) {
-            if (yval == 0)
-                return abs(this);
-            yval = 1;
-        }
-        int len = (xval > yval ? xval : yval) + 1;
-        int[] xwords = new int[len];
-        int[] ywords = new int[len];
-        getAbsolute(xwords);
-        y.getAbsolute(ywords);
-        len = MPN.gcd(xwords, ywords, len);
-        BigInteger result = new BigInteger(0);
-        result.ival = len;
-        result.words = xwords;
-        return result.canonicalize();
-    }
-
-    /**
-     * <p>Returns <code>true</code> if this BigInteger is probably prime,
-     * <code>false</code> if it's definitely composite. If <code>certainty</code>
-     * is <code><= 0</code>, <code>true</code> is returned.</p>
-     *
-     * @param certainty a measure of the uncertainty that the caller is willing
-     *                  to tolerate: if the call returns <code>true</code> the probability that
-     *                  this BigInteger is prime exceeds <code>(1 - 1/2<sup>certainty</sup>)</code>.
-     *                  The execution time of this method is proportional to the value of this
-     *                  parameter.
-     * @return <code>true</code> if this BigInteger is probably prime,
-     *         <code>false</code> if it's definitely composite.
-     */
-    public boolean isProbablePrime(int certainty) {
-        if (certainty < 1)
-            return true;
-
-        /** We'll use the Rabin-Miller algorithm for doing a probabilistic
-         * primality test.  It is fast, easy and has faster decreasing odds of a
-         * composite passing than with other tests.  This means that this
-         * method will actually have a probability much greater than the
-         * 1 - .5^certainty specified in the JCL (p. 117), but I don't think
-         * anyone will complain about better performance with greater certainty.
-         *
-         * The Rabin-Miller algorithm can be found on pp. 259-261 of "Applied
-         * Cryptography, Second Edition" by Bruce Schneier.
-         */
-
-        // First rule out small prime factors
-        BigInteger rem = new BigInteger();
-        int i;
-        for (i = 0; i < primes.length; i++) {
-            if (words == null && ival == primes[i])
-                return true;
-            if (primes[i] - minFixNum >= smallFixNums.length) {
-                divide(this, BigInteger.valueOf(primes[i]), null, rem, TRUNCATE);
-            } else {
-                divide(this, smallFixNums[primes[i] - minFixNum], null, rem, TRUNCATE);
-            }
-            if (rem.canonicalize().isZero())
-                return false;
-        }
-
-        // Now perform the Rabin-Miller test.
-
-        // Set b to the number of times 2 evenly divides (this - 1).
-        // I.e. 2^b is the largest power of 2 that divides (this - 1).
-        BigInteger pMinus1 = add(this, -1);
-        int b = pMinus1.getLowestSetBit();
-
-        // Set m such that this = 1 + 2^b * m.
-        long val = 2L << b - 1;
-        BigInteger m = pMinus1.divide(valueOf(val));
-
-        // The HAC (Handbook of Applied Cryptography), Alfred Menezes & al. Note
-        // 4.49 (controlling the error probability) gives the number of trials
-        // for an error probability of 1/2**80, given the number of bits in the
-        // number to test.  we shall use these numbers as is if/when 'certainty'
-        // is less or equal to 80, and twice as much if it's greater.
-        int bits = this.bitLength();
-        for (i = 0; i < k.length; i++)
-            if (bits <= k[i])
-                break;
-        int trials = t[i];
-        if (certainty > 80)
-            trials *= 2;
-        BigInteger z;
-        for (int t = 0; t < trials; t++) {
-            // The HAC (Handbook of Applied Cryptography), Alfred Menezes & al.
-            // Remark 4.28 states: "...A strategy that is sometimes employed
-            // is to fix the bases a to be the first few primes instead of
-            // choosing them at random.
-            z = smallFixNums[primes[t] - minFixNum].modPow(m, this);
-            if (z.isOne() || z.equals(pMinus1))
-                continue;            // Passes the test; may be prime.
-
-            for (i = 0; i < b; ) {
-                if (z.isOne())
-                    return false;
-                i++;
-                if (z.equals(pMinus1))
-                    break;            // Passes the test; may be prime.
-
-                z = z.modPow(valueOf(2), this);
-            }
-
-            if (i == b && !z.equals(pMinus1))
-                return false;
-        }
-        return true;
-    }
-
-    private void setInvert() {
-        if (words == null)
-            ival = ~ival;
-        else {
-            for (int i = ival; --i >= 0; )
-                words[i] = ~words[i];
-        }
-    }
-
-    private void setShiftLeft(BigInteger x, int count) {
-        int[] xwords;
-        int xlen;
-        if (x.words == null) {
-            if (count < 32) {
-                set((long) x.ival << count);
-                return;
-            }
-            xwords = new int[1];
-            xwords[0] = x.ival;
-            xlen = 1;
-        } else {
-            xwords = x.words;
-            xlen = x.ival;
-        }
-        int word_count = count >> 5;
-        count &= 31;
-        int new_len = xlen + word_count;
-        if (count == 0) {
-            realloc(new_len);
-            for (int i = xlen; --i >= 0; )
-                words[i + word_count] = xwords[i];
-        } else {
-            new_len++;
-            realloc(new_len);
-            int shift_out = MPN.lshift(words, word_count, xwords, xlen, count);
-            count = 32 - count;
-            words[new_len - 1] = (shift_out << count) >> count;  // sign-extend.
-        }
-        ival = new_len;
-        for (int i = word_count; --i >= 0; )
-            words[i] = 0;
-    }
-
-    private void setShiftRight(BigInteger x, int count) {
-        if (x.words == null)
-            set(count < 32 ? x.ival >> count : x.ival < 0 ? -1 : 0);
-        else if (count == 0)
-            set(x);
-        else {
-            boolean neg = x.isNegative();
-            int word_count = count >> 5;
-            count &= 31;
-            int d_len = x.ival - word_count;
-            if (d_len <= 0)
-                set(neg ? -1 : 0);
-            else {
-                if (words == null || words.length < d_len)
-                    realloc(d_len);
-                MPN.rshift0(words, x.words, word_count, d_len, count);
-                ival = d_len;
-                if (neg)
-                    words[d_len - 1] |= -2 << (31 - count);
-            }
-        }
-    }
-
-    private void setShift(BigInteger x, int count) {
-        if (count > 0)
-            setShiftLeft(x, count);
-        else
-            setShiftRight(x, -count);
-    }
-
     private static BigInteger shift(BigInteger x, int count) {
         if (x.words == null) {
             if (count <= 0)
@@ -1411,100 +809,6 @@ public class BigInteger {
         return result.canonicalize();
     }
 
-    public BigInteger shiftLeft(int n) {
-        return shift(this, n);
-    }
-
-    public BigInteger shiftRight(int n) {
-        return shift(this, -n);
-    }
-
-    private void format(int radix, StringBuffer buffer) {
-        if (words == null)
-            buffer.append(Integer.toString(ival, radix));
-        else if (ival <= 2)
-            buffer.append(Long.toString(longValue(), radix));
-        else {
-            boolean neg = isNegative();
-            int[] work;
-            if (neg || radix != 16) {
-                work = new int[ival];
-                getAbsolute(work);
-            } else
-                work = words;
-            int len = ival;
-
-            if (radix == 16) {
-                if (neg)
-                    buffer.append('-');
-                int buf_start = buffer.length();
-                for (int i = len; --i >= 0; ) {
-                    int word = work[i];
-                    for (int j = 8; --j >= 0; ) {
-                        int hex_digit = (word >> (4 * j)) & 0xF;
-                        // Suppress leading zeros:
-                        if (hex_digit > 0 || buffer.length() > buf_start)
-                            buffer.append(Character.forDigit(hex_digit, 16));
-                    }
-                }
-            } else {
-                int i = buffer.length();
-                for (; ; ) {
-                    int digit = MPN.divmod_1(work, work, len, radix);
-                    buffer.append(Character.forDigit(digit, radix));
-                    while (len > 0 && work[len - 1] == 0) len--;
-                    if (len == 0)
-                        break;
-                }
-                if (neg)
-                    buffer.append('-');
-         /* Reverse buffer. */
-                int j = buffer.length() - 1;
-                while (i < j) {
-                    char tmp = buffer.charAt(i);
-                    buffer.setCharAt(i, buffer.charAt(j));
-                    buffer.setCharAt(j, tmp);
-                    i++;
-                    j--;
-                }
-            }
-        }
-    }
-
-    public String toString() {
-        return toString(16).toUpperCase();
-    }
-
-    public String toString(int radix) {
-        if (words == null)
-            return Integer.toString(ival, radix);
-        if (ival <= 2)
-            return Long.toString(longValue(), radix);
-        int buf_size = ival * (MPN.chars_per_word(radix) + 1);
-        StringBuffer buffer = new StringBuffer(buf_size);
-        format(radix, buffer);
-        return buffer.toString();
-    }
-
-    public int intValue() {
-        if (words == null)
-            return ival;
-        return words[0];
-    }
-
-    public long longValue() {
-        if (words == null)
-            return ival;
-        if (ival == 1)
-            return words[0];
-        return ((long) words[1] << 32) + ((long) words[0] & 0xffffffffL);
-    }
-
-    public int hashCode() {
-        // FIXME: May not match hashcode of JDK.
-        return words == null ? ival : (words[0] + words[ival - 1]);
-    }
-
     /* Assumes x and y are both canonicalized. */
     private static boolean equals(BigInteger x, BigInteger y) {
         if (x.words == null && y.words == null)
@@ -1516,13 +820,6 @@ public class BigInteger {
                 return false;
         }
         return true;
-    }
-
-    /* Assumes this and obj are both canonicalized. */
-    public boolean equals(Object obj) {
-        if (!(obj instanceof BigInteger))
-            return false;
-        return equals(this, (BigInteger) obj);
     }
 
     private static BigInteger valueOf(String s, int radix)
@@ -1571,136 +868,6 @@ public class BigInteger {
         return make(words, size);
     }
 
-    public double doubleValue() {
-        if (words == null)
-            return (double) ival;
-        if (ival <= 2)
-            return (double) longValue();
-        if (isNegative())
-            return neg(this).roundToDouble(0, true, false);
-        return roundToDouble(0, false, false);
-    }
-
-    public float floatValue() {
-        return (float) doubleValue();
-    }
-
-    /**
-     * Return true if any of the lowest n bits are one.
-     * (false if n is negative).
-     */
-    private boolean checkBits(int n) {
-        if (n <= 0)
-            return false;
-        if (words == null)
-            return n > 31 || ((ival & ((1 << n) - 1)) != 0);
-        int i;
-        for (i = 0; i < (n >> 5); i++)
-            if (words[i] != 0)
-                return true;
-        return (n & 31) != 0 && (words[i] & ((1 << (n & 31)) - 1)) != 0;
-    }
-
-    /**
-     * Convert a semi-processed BigInteger to double.
-     * Number must be non-negative.  Multiplies by a power of two, applies sign,
-     * and converts to double, with the usual java rounding.
-     *
-     * @param exp       power of two, positive or negative, by which to multiply
-     * @param neg       true if negative
-     * @param remainder true if the BigInteger is the result of a truncating
-     *                  division that had non-zero remainder.  To ensure proper rounding in
-     *                  this case, the BigInteger must have at least 54 bits.
-     */
-    private double roundToDouble(int exp, boolean neg, boolean remainder) {
-        // Compute length.
-        int il = bitLength();
-
-        // Exponent when normalized to have decimal point directly after
-        // leading one.  This is stored excess 1023 in the exponent bit field.
-        exp += il - 1;
-
-        // Gross underflow.  If exp == -1075, we let the rounding
-        // computation determine whether it is minval or 0 (which are just
-        // 0x0000 0000 0000 0001 and 0x0000 0000 0000 0000 as bit
-        // patterns).
-        if (exp < -1075)
-            return neg ? -0.0 : 0.0;
-
-        // gross overflow
-        if (exp > 1023)
-            return neg ? Double.NEGATIVE_INFINITY : Double.POSITIVE_INFINITY;
-
-        // number of bits in mantissa, including the leading one.
-        // 53 unless it's denormalized
-        int ml = (exp >= -1022 ? 53 : 53 + exp + 1022);
-
-        // Get top ml + 1 bits.  The extra one is for rounding.
-        long m;
-        int excess_bits = il - (ml + 1);
-        if (excess_bits > 0)
-            m = ((words == null) ? ival >> excess_bits
-                    : MPN.rshift_long(words, ival, excess_bits));
-        else
-            m = longValue() << (-excess_bits);
-
-        // Special rounding for maxval.  If the number exceeds maxval by
-        // any amount, even if it's less than half a step, it overflows.
-        if (exp == 1023 && ((m >> 1) == (1L << 53) - 1)) {
-            if (remainder || checkBits(il - ml))
-                return neg ? Double.NEGATIVE_INFINITY : Double.POSITIVE_INFINITY;
-            else
-                return neg ? -Double.MAX_VALUE : Double.MAX_VALUE;
-        }
-
-        // Normal round-to-even rule: round up if the bit dropped is a one, and
-        // the bit above it or any of the bits below it is a one.
-        if ((m & 1) == 1
-                && ((m & 2) == 2 || remainder || checkBits(excess_bits))) {
-            m += 2;
-            // Check if we overflowed the mantissa
-            if ((m & (1L << 54)) != 0) {
-                exp++;
-                // renormalize
-                m >>= 1;
-            }
-            // Check if a denormalized mantissa was just rounded up to a
-            // normalized one.
-            else if (ml == 52 && (m & (1L << 53)) != 0)
-                exp++;
-        }
-
-        // Discard the rounding bit
-        m >>= 1;
-
-        long bits_sign = neg ? (1L << 63) : 0;
-        exp += 1023;
-        long bits_exp = (exp <= 0) ? 0 : ((long) exp) << 52;
-        long bits_mant = m & ~(1L << 52);
-        return Double.longBitsToDouble(bits_sign | bits_exp | bits_mant);
-    }
-
-    /**
-     * Copy the abolute value of this into an array of words.
-     * Assumes words.length >= (this.words == null ? 1 : this.ival).
-     * Result is zero-extended, but need not be a valid 2's complement number.
-     */
-    private void getAbsolute(int[] words) {
-        int len;
-        if (this.words == null) {
-            len = 1;
-            words[0] = this.ival;
-        } else {
-            len = this.ival;
-            for (int i = len; --i >= 0; )
-                words[i] = this.words[i];
-        }
-        if (words[len - 1] < 0)
-            negate(words, words, len);
-        for (int i = words.length; --i > len; )
-            words[i] = 0;
-    }
-
     /**
      * Set dest[0:len-1] to the negation of src[0:len-1].
      * Return true if overflow (i.e. if src is -2**(32*len-1)).
@@ -1717,38 +884,8 @@ public class BigInteger {
         return (negative && dest[len - 1] < 0);
     }
 
-    /**
-     * Destructively set this to the negative of x.
-     * It is OK if x==this.
-     */
-    private void setNegative(BigInteger x) {
-        int len = x.ival;
-        if (x.words == null) {
-            if (len == Integer.MIN_VALUE)
-                set(-(long) len);
-            else
-                set(-len);
-            return;
-        }
-        realloc(len + 1);
-        if (negate(words, x.words, len))
-            words[len++] = 0;
-        ival = len;
-    }
-
-    /**
-     * Destructively negate this.
-     */
-    private void setNegative() {
-        setNegative(this);
-    }
-
     private static BigInteger abs(BigInteger x) {
         return x.isNegative() ? neg(x) : x;
-    }
-
-    public BigInteger abs() {
-        return abs(this);
     }
 
     private static BigInteger neg(BigInteger x) {
@@ -1757,46 +894,6 @@ public class BigInteger {
         BigInteger result = new BigInteger(0);
         result.setNegative(x);
         return result.canonicalize();
-    }
-
-    public BigInteger negate() {
-        return neg(this);
-    }
-
-    /**
-     * Calculates ceiling(log2(this < 0 ? -this : this+1))
-     * See Common Lisp: the Language, 2nd ed, p. 361.
-     */
-    public int bitLength() {
-        if (words == null)
-            return MPN.intLength(ival);
-        return MPN.intLength(words, ival);
-    }
-
-    public byte[] toByteArray() {
-        // Determine number of serialize needed.  The method bitlength returns
-        // the size without the sign bit, so add one bit for that and then
-        // add 7 more to emulate the ceil function using integer math.
-        byte[] bytes = new byte[(bitLength() + 1 + 7) / 8];
-        int nbytes = bytes.length;
-
-        int wptr = 0;
-        int word;
-
-        // Deal with words array until one word or less is left to process.
-        // If BigInteger is an int, then it is in ival and nbytes will be <= 4.
-        while (nbytes > 4) {
-            word = words[wptr++];
-            for (int i = 4; i > 0; --i, word >>= 8)
-                bytes[--nbytes] = (byte) word;
-        }
-
-        // Deal with the last few serialize.  If BigInteger is an int, use ival.
-        word = (words == null) ? ival : words[wptr];
-        for (; nbytes > 0; word >>= 8)
-            bytes[--nbytes] = (byte) word;
-
-        return bytes;
     }
 
     /**
@@ -2043,98 +1140,6 @@ public class BigInteger {
         return make(words, x.ival);
     }
 
-    /**
-     * Return the logical (bit-wise) "and" of two BigIntegers.
-     */
-    public BigInteger and(BigInteger y) {
-        if (y.words == null)
-            return and(this, y.ival);
-        else if (words == null)
-            return and(y, ival);
-
-        BigInteger x = this;
-        if (ival < y.ival) {
-            BigInteger temp = this;
-            x = y;
-            y = temp;
-        }
-        int i;
-        int len = y.isNegative() ? x.ival : y.ival;
-        int[] words = new int[len];
-        for (i = 0; i < y.ival; i++)
-            words[i] = x.words[i] & y.words[i];
-        for (; i < len; i++)
-            words[i] = x.words[i];
-        return make(words, len);
-    }
-
-    /**
-     * Return the logical (bit-wise) "(inclusive) or" of two BigIntegers.
-     */
-    public BigInteger or(BigInteger y) {
-        return bitOp(7, this, y);
-    }
-
-    /**
-     * Return the logical (bit-wise) "exclusive or" of two BigIntegers.
-     */
-    public BigInteger xor(BigInteger y) {
-        return bitOp(6, this, y);
-    }
-
-    /**
-     * Return the logical (bit-wise) negation of a BigInteger.
-     */
-    public BigInteger not() {
-        return bitOp(12, this, ZERO);
-    }
-
-    public BigInteger andNot(BigInteger val) {
-        return and(val.not());
-    }
-
-    public BigInteger clearBit(int n) {
-        if (n < 0)
-            throw new ArithmeticException();
-
-        return and(ONE.shiftLeft(n).not());
-    }
-
-    public BigInteger setBit(int n) {
-        if (n < 0)
-            throw new ArithmeticException();
-
-        return or(ONE.shiftLeft(n));
-    }
-
-    public boolean testBit(int n) {
-        if (n < 0)
-            throw new ArithmeticException();
-
-        return !and(ONE.shiftLeft(n)).isZero();
-    }
-
-    public BigInteger flipBit(int n) {
-        if (n < 0)
-            throw new ArithmeticException();
-
-        return xor(ONE.shiftLeft(n));
-    }
-
-    public int getLowestSetBit() {
-        if (isZero())
-            return -1;
-
-        if (words == null)
-            return MPN.findLowestBit(ival);
-        else
-            return MPN.findLowestBit(words);
-    }
-
-    // bit4count[I] is number of '1' bits in I.
-    private static final byte[] bit4_count = {0, 1, 1, 2, 1, 2, 2, 3,
-            1, 2, 2, 3, 2, 3, 3, 4};
-
     private static int bitCount(int i) {
         int count = 0;
         while (i != 0) {
@@ -2150,79 +1155,6 @@ public class BigInteger {
             count += bitCount(x[len]);
         return count;
     }
-
-    /**
-     * Count one bits in a BigInteger.
-     * If argument is negative, count zero bits instead.
-     */
-    public int bitCount() {
-        int i, x_len;
-        int[] x_words = words;
-        if (x_words == null) {
-            x_len = 1;
-            i = bitCount(ival);
-        } else {
-            x_len = ival;
-            i = bitCount(x_words, x_len);
-        }
-        return isNegative() ? x_len * 32 - i : i;
-    }
-
-//
-//    public String getHex() {
-//        String c[] = new String[]{"0", "1", "2", "3", "4", "5", "6", "7", "8", "9", "A", "B", "C", "D", "E", "F"};
-//
-//        int[] arc=words;
-//        if (words==null || words.length==0) {
-//            arc=new int[]{ival};
-//        }
-//        StringBuilder ret=new StringBuilder();
-//        for (int i = arc.length - 1; i >= 0; i--) {
-//            int value = arc[i];
-//            int idx;
-////        idx=value>>60&0x0000000f;
-////        [ret appendString:c[idx]];
-////        idx=value>>56&0x0000000f;
-////        [ret appendString:c[idx]];
-////
-////        idx=value>>52&0x0000000f;
-////        [ret appendString:c[idx]];
-////        idx=value>>48&0x0000000f;
-////        [ret appendString:c[idx]];
-////
-////        idx=value>>44&0x0000000f;
-////        [ret appendString:c[idx]];
-////        idx=value>>40&0x0000000f;
-////        [ret appendString:c[idx]];
-////
-////        idx=value>>36&0x0000000f;
-////        [ret appendString:c[idx]];
-////        idx=value>>32&0x0000000f;
-////        [ret appendString:c[idx]];
-//
-//            idx = value >> 28 & 0x0000000f;
-//            ret.append(c[idx]);
-//            idx = value >> 24 & 0x0000000f;
-//            ret.append(c[idx]);
-//
-//            idx = value >> 20 & 0x0000000f;
-//            ret.append(c[idx]);
-//            idx = value >> 16 & 0x0000000f;
-//            ret.append(c[idx]);
-//
-//            idx = value >> 12 & 0x0000000f;
-//            ret.append(c[idx]);
-//            idx = value >> 8 & 0x0000000f;
-//            ret.append(c[idx]);
-//
-//            idx = value >> 4 & 0x0000000f;
-//            ret.append(c[idx]);
-//            idx = value & 0x0000000f;
-//            ret.append(c[idx]);
-//
-//        }
-//        return ret.toString();
-//    }
 
     private static int getIntFrom(byte[] buffer, int idx) {
         long v = 0;
@@ -2245,55 +1177,6 @@ public class BigInteger {
         buffer[3 + position] = (byte) (((v) & 0xff));
     }
 
-    public byte[] serialize() {
-        byte buffer[] = {0, 0, 0, 0};
-        ArrayList<Byte> dat = new ArrayList<Byte>();
-        //first 4 serialize == integer show length of this integer
-        // eg: 000004 => 4 serialize in length
-        // if < then maxValueInt => 4 serialize
-        if (this.words == null) {
-            //use iVal only
-            fillInteger(4, buffer);
-            dat.add(buffer[0]);
-            dat.add(buffer[1]);
-            dat.add(buffer[2]);
-            dat.add(buffer[3]);
-            fillInteger(ival, buffer);
-            dat.add(buffer[0]);
-            dat.add(buffer[1]);
-            dat.add(buffer[2]);
-            dat.add(buffer[3]);
-
-            byte[] ret = new byte[dat.size()];
-            for (int i = 0; i < dat.size(); i++) {
-                ret[i] = dat.get(i);
-            }
-            return ret;
-        }
-
-        fillInteger(ival * 4, buffer);
-        dat.add(buffer[0]);
-        dat.add(buffer[1]);
-        dat.add(buffer[2]);
-        dat.add(buffer[3]);
-
-        for (int j = ival - 1; j >= 0; j--) {
-            int v = words[j];
-//        if (j == self.dataSize - 1 && v == 0) continue; //Why!??!?!?
-            fillInteger(v, buffer);
-            dat.add(buffer[0]);
-            dat.add(buffer[1]);
-            dat.add(buffer[2]);
-            dat.add(buffer[3]);
-        }
-        byte[] ret = new byte[dat.size()];
-        for (int i = 0; i < dat.size(); i++) {
-            ret[i] = dat.get(i);
-        }
-        return ret;
-    }
-
-
     public static List<BigInteger> deSerialize(byte[] data) {
         List<BigInteger> ret = new ArrayList<BigInteger>();
         for (int i = 0; i < data.length; ) {
@@ -2304,50 +1187,16 @@ public class BigInteger {
         return ret;
     }
 
-
-    public void pack() {
-        if (words == null) return;
-        if (ival > 0 && words.length == 0) {
-            words = null;
-            return;
-        }
-        if (words.length == 0) {
-            words = null;
-        } else {
-            ival = words.length;
-            while (ival > 0 && words[ival - 1] == 0) {
-
-                int[] newWords = new int[ival - 1];
-                System.arraycopy(words, 0, newWords, 0, ival - 1);
-                ival = newWords.length;
-                words = newWords;
-            }
-            if (ival == 1) {
-                ival = words[0];
-                words = null;
-            }
-            if (ival == 0) {
-                words = null;
-            }
-        }
-    }
-
     public static byte[] dataFromBigIntArray(List<BigInteger> lst, int bitLen) {
         ArrayList<Byte> ret = new ArrayList<Byte>();
 
         for (int i = 0; i < lst.size(); i++) {
             BigInteger integer = lst.get(i);
             //stepping through integers
-            boolean simple = false;
-            boolean skip = false;
-            for (int j = integer.ival - 1; j >= 0; j--) {
+            if (integer.words == null || integer.words.length == 0) {
+                boolean skip = true;
+                //simple
                 long v = integer.ival;
-                if (integer.words == null || integer.words.length == 0) {
-                    simple = true;
-                } else {
-                    v = integer.words[j];
-                }
-                if (v == 0 && skip) continue;
                 char val = (char) ((v >> 24) & 0xff);
                 if (val != 0 || !skip) {
                     ret.add((byte) (val & 0xff));
@@ -2371,8 +1220,34 @@ public class BigInteger {
                     ret.add((byte) (val & 0xff));
                     skip = false;
                 }
+            } else {
+                for (int j = integer.ival - 1; j >= 0; j--) {
+                    long v = integer.words[j];
+                    char val = (char) ((v >> 24) & 0xff);
+//                    if (val != 0 || !skip) {
+                    ret.add((byte) (val & 0xff));
+//                        skip = false;
+//                    }
 
-                if (simple) break;
+                    val = (char) ((v >> 16) & 0xff);
+//                    if (val != 0 || !skip) {
+                    ret.add((byte) (val & 0xff));
+//                        skip = false;
+//                    }
+
+                    val = (char) ((v >> 8) & 0xff);
+//                    if (val != 0 || !skip) {
+                    ret.add((byte) (val & 0xff));
+//                        skip = false;
+//                    }
+
+                    val = (char) ((v) & 0xff);
+//                    if (val != 0 || !skip) {
+                    ret.add((byte) (val & 0xff));
+//                        skip = false;
+//                    }
+
+                }
             }
 
         }
@@ -2382,7 +1257,6 @@ public class BigInteger {
         }
         return bytes;
     }
-
 
     public static int fromBytes(BigInteger toSet, byte[] data, int offset) {
         int length = getIntFrom(data, offset);
@@ -2484,5 +1358,1143 @@ public class BigInteger {
             }
         }
         return ret;
+    }
+
+    public int getIval() {
+        return ival;
+    }
+
+    public void setIval(int ival) {
+        this.ival = ival;
+    }
+
+    public int[] getWords() {
+        return words;
+    }
+
+    public void setWords(int[] words) {
+        this.words = words;
+    }
+
+    private void init(int numBits, Random rnd) {
+        int highbits = numBits & 31;
+        // minimum number of serialize to store the above number of bits
+        int highBitByteCount = (highbits + 7) / 8;
+        // number of bits to discard from the last byte
+        int discardedBitCount = highbits % 8;
+        if (discardedBitCount != 0)
+            discardedBitCount = 8 - discardedBitCount;
+        byte[] highBitBytes = new byte[highBitByteCount];
+        if (highbits > 0) {
+            rnd.nextBytes(highBitBytes);
+            highbits = (highBitBytes[highBitByteCount - 1] & 0xFF) >>> discardedBitCount;
+            for (int i = highBitByteCount - 2; i >= 0; i--)
+                highbits = (highbits << 8) | (highBitBytes[i] & 0xFF);
+        }
+        int nwords = numBits / 32;
+
+        while (highbits == 0 && nwords > 0) {
+            highbits = rnd.nextInt();
+            --nwords;
+        }
+        if (nwords == 0 && highbits >= 0) {
+            ival = highbits;
+            words = null;
+        } else {
+            ival = highbits < 0 ? nwords + 2 : nwords + 1;
+            words = new int[ival];
+            words[nwords] = highbits;
+            while (--nwords >= 0)
+                words[nwords] = rnd.nextInt();
+        }
+    }
+
+    /**
+     * Change words.length to nwords.
+     * We allow words.length to be upto nwords+2 without reallocating.
+     */
+    private void realloc(int nwords) {
+        if (nwords == 0) {
+            if (words != null) {
+                if (ival > 0)
+                    ival = words[0];
+                words = null;
+            }
+        } else if (words == null
+                || words.length < nwords
+                || words.length > nwords + 2) {
+            int[] new_words = new int[nwords];
+            if (words == null) {
+                new_words[0] = ival;
+                ival = 1;
+            } else {
+                if (nwords < ival)
+                    ival = nwords;
+                System.arraycopy(words, 0, new_words, 0, ival);
+            }
+            words = new_words;
+        }
+    }
+
+    protected boolean isNegative() {
+        return (words == null ? ival : words[ival - 1]) < 0;
+    }
+
+    /**
+     * Destructively set this to the negative of x.
+     * It is OK if x==this.
+     */
+    private void setNegative(BigInteger x) {
+        int len = x.ival;
+        if (x.words == null) {
+            if (len == Integer.MIN_VALUE)
+                set(-(long) len);
+            else
+                set(-len);
+            return;
+        }
+        realloc(len + 1);
+        if (negate(words, x.words, len))
+            words[len++] = 0;
+        ival = len;
+    }
+
+    public int signum() {
+        if (ival == 0 && words == null)
+            return 0;
+        int top = words == null ? ival : words[ival - 1];
+        return top < 0 ? -1 : 1;
+    }
+
+    /**
+     * @since 1.2
+     */
+    public int compareTo(BigInteger val) {
+        return compareTo(this, val);
+    }
+
+    public BigInteger min(BigInteger val) {
+        return compareTo(this, val) < 0 ? this : val;
+    }
+
+    public BigInteger max(BigInteger val) {
+        return compareTo(this, val) > 0 ? this : val;
+    }
+
+    public boolean isZero() {
+        return words == null && ival == 0;
+    }
+
+    public boolean isOne() {
+        return words == null && ival == 1;
+    }
+
+    private BigInteger canonicalize() {
+        if (words != null
+                && (ival = BigInteger.wordsNeeded(words, ival)) <= 1) {
+            if (ival == 1)
+                ival = words[0];
+            words = null;
+        }
+        if (words == null && ival >= minFixNum && ival <= maxFixNum)
+            return smallFixNums[ival - minFixNum];
+        return this;
+    }
+
+    /**
+     * Set this to the sum of x and y.
+     * OK if x==this.
+     */
+    private void setAdd(BigInteger x, int y) {
+        if (x.words == null) {
+            set((long) x.ival + (long) y);
+            return;
+        }
+        int len = x.ival;
+        realloc(len + 1);
+        long carry = y;
+        for (int i = 0; i < len; i++) {
+            carry += ((long) x.words[i] & 0xffffffffL);
+            words[i] = (int) carry;
+            carry >>= 32;
+        }
+        if (x.words[len - 1] < 0)
+            carry--;
+        words[len] = (int) carry;
+        ival = wordsNeeded(words, len + 1);
+    }
+
+    /**
+     * Destructively add an int to this.
+     */
+    private void setAdd(int y) {
+        setAdd(this, y);
+    }
+
+    /**
+     * Destructively set the value of this to a long.
+     */
+    private void set(long y) {
+        int i = (int) y;
+        if ((long) i == y) {
+            ival = i;
+            words = null;
+        } else {
+            realloc(2);
+            words[0] = i;
+            words[1] = (int) (y >> 32);
+            ival = 2;
+        }
+    }
+
+    /**
+     * Destructively set the value of this to the given words.
+     * The words array is reused, not copied.
+     */
+    private void set(int[] words, int length) {
+        this.ival = length;
+        this.words = words;
+    }
+
+    /**
+     * Destructively set the value of this to that of y.
+     */
+    private void set(BigInteger y) {
+        if (y.words == null)
+            set(y.ival);
+        else if (this != y) {
+            realloc(y.ival);
+            System.arraycopy(y.words, 0, words, 0, y.ival);
+            ival = y.ival;
+        }
+    }
+
+    public BigInteger add(BigInteger val) {
+        return add(this, val, 1);
+    }
+
+    public BigInteger subtract(BigInteger val) {
+        return add(this, val, -1);
+    }
+
+    public BigInteger multiply(BigInteger y) {
+        return times(this, y);
+    }
+
+    public BigInteger divide(BigInteger val) {
+        if (val.isZero())
+            throw new ArithmeticException("divisor is zero");
+
+        BigInteger quot = new BigInteger();
+        divide(this, val, quot, null, TRUNCATE);
+        return quot.canonicalize();
+    }
+
+    public BigInteger remainder(BigInteger val) {
+        if (val.isZero())
+            throw new ArithmeticException("divisor is zero");
+
+        BigInteger rem = new BigInteger();
+        divide(this, val, null, rem, TRUNCATE);
+        return rem.canonicalize();
+    }
+
+    public BigInteger[] divideAndRemainder(BigInteger val) {
+        if (val.isZero())
+            throw new ArithmeticException("divisor is zero");
+
+        BigInteger[] result = new BigInteger[2];
+        result[0] = new BigInteger();
+        result[1] = new BigInteger();
+        divide(this, val, result[0], result[1], TRUNCATE);
+        result[0].canonicalize();
+        result[1].canonicalize();
+        return result;
+    }
+
+    public BigInteger mod(BigInteger m) {
+        if (m.isNegative() || m.isZero())
+            throw new ArithmeticException("non-positive modulus");
+
+        BigInteger rem = new BigInteger();
+        divide(this, m, null, rem, FLOOR);
+        return rem.canonicalize();
+    }
+
+    /**
+     * Calculate the integral power of a BigInteger.
+     *
+     * @param exponent the exponent (must be non-negative)
+     */
+    public BigInteger pow(int exponent) {
+        if (exponent <= 0) {
+            if (exponent == 0)
+                return ONE;
+            throw new ArithmeticException("negative exponent");
+        }
+        if (isZero())
+            return this;
+        int plen = words == null ? 1 : ival;  // Length of pow2.
+        int blen = ((bitLength() * exponent) >> 5) + 2 * plen;
+        boolean negative = isNegative() && (exponent & 1) != 0;
+        int[] pow2 = new int[blen];
+        int[] rwords = new int[blen];
+        int[] work = new int[blen];
+        getAbsolute(pow2);    // pow2 = abs(this);
+        int rlen = 1;
+        rwords[0] = 1; // rwords = 1;
+        for (; ; )  // for (i = 0;  ; i++)
+        {
+            // pow2 == this**(2**i)
+            // prod = this**(sum(j=0..i-1, (exponent>>j)&1))
+            if ((exponent & 1) != 0) { // r *= pow2
+                MPN.mul(work, pow2, plen, rwords, rlen);
+                int[] temp = work;
+                work = rwords;
+                rwords = temp;
+                rlen += plen;
+                while (rwords[rlen - 1] == 0) rlen--;
+            }
+            exponent >>= 1;
+            if (exponent == 0)
+                break;
+            // pow2 *= pow2;
+            MPN.mul(work, pow2, plen, pow2, plen);
+            int[] temp = work;
+            work = pow2;
+            pow2 = temp;  // swap to avoid a copy
+            plen *= 2;
+            while (pow2[plen - 1] == 0) plen--;
+        }
+        if (rwords[rlen - 1] < 0)
+            rlen++;
+        if (negative)
+            negate(rwords, rwords, rlen);
+        return BigInteger.make(rwords, rlen);
+    }
+
+    public BigInteger modInverse(BigInteger y) {
+        if (y.isNegative() || y.isZero())
+            throw new ArithmeticException("non-positive modulo");
+
+        // Degenerate cases.
+        if (y.isOne())
+            return ZERO;
+        if (isOne())
+            return ONE;
+
+        // Use Euclid's algorithm as in gcd() but do this recursively
+        // rather than in a loop so we can use the intermediate results as we
+        // unwind from the recursion.
+        // Used http://www.math.nmsu.edu/~crypto/EuclideanAlgo.html as reference.
+        BigInteger result = new BigInteger();
+        boolean swapped = false;
+
+        if (y.words == null) {
+            // The result is guaranteed to be less than the modulus, y (which is
+            // an int), so simplify this by working with the int result of this
+            // modulo y.  Also, if this is negative, make it positive via modulo
+            // math.  Note that BigInteger.mod() must be used even if this is
+            // already an int as the % operator would provide a negative result if
+            // this is negative, BigInteger.mod() never returns negative values.
+            int xval = (words != null || isNegative()) ? mod(y).ival : ival;
+            int yval = y.ival;
+
+            // Swap values so x > y.
+            if (yval > xval) {
+                int tmp = xval;
+                xval = yval;
+                yval = tmp;
+                swapped = true;
+            }
+            // Normally, the result is in the 2nd element of the array, but
+            // if originally x < y, then x and y were swapped and the result
+            // is in the 1st element of the array.
+            result.ival =
+                    euclidInv(yval, xval % yval, xval / yval)[swapped ? 0 : 1];
+
+            // Result can't be negative, so make it positive by adding the
+            // original modulus, y.ival (not the possibly "swapped" yval).
+            if (result.ival < 0)
+                result.ival += y.ival;
+        } else {
+            // As above, force this to be a positive value via modulo math.
+            BigInteger x = isNegative() ? this.mod(y) : this;
+
+            // Swap values so x > y.
+            if (x.compareTo(y) < 0) {
+                result = x;
+                x = y;
+                y = result; // use 'result' as a work var
+                swapped = true;
+            }
+            // As above (for ints), result will be in the 2nd element unless
+            // the original x and y were swapped.
+            BigInteger rem = new BigInteger();
+            BigInteger quot = new BigInteger();
+            divide(x, y, quot, rem, FLOOR);
+            // quot and rem may not be in canonical form. ensure
+            rem.canonicalize();
+            quot.canonicalize();
+            BigInteger[] xy = new BigInteger[2];
+            euclidInv(y, rem, quot, xy);
+            result = swapped ? xy[0] : xy[1];
+
+            // Result can't be negative, so make it positive by adding the
+            // original modulus, y (which is now x if they were swapped).
+            if (result.isNegative())
+                result = add(result, swapped ? x : y, 1);
+        }
+
+        return result;
+    }
+
+    public BigInteger modPow(BigInteger exponent, BigInteger m) {
+        if (m.isNegative() || m.isZero())
+            throw new ArithmeticException("non-positive modulo");
+
+        if (exponent.isNegative())
+            return modInverse(m).modPow(exponent.negate(), m);
+        if (exponent.isOne())
+            return mod(m);
+
+        // To do this naively by first raising this to the power of exponent
+        // and then performing modulo m would be extremely expensive, especially
+        // for very large numbers.  The solution is found in Number Theory
+        // where a combination of partial powers and moduli can be done easily.
+        //
+        // We'll use the algorithm for Additive Chaining which can be found on
+        // p. 244 of "Applied Cryptography, Second Edition" by Bruce Schneier.
+        BigInteger s = ONE;
+        BigInteger t = this;
+        BigInteger u = exponent;
+        int runcounter = 0;
+        while (!u.isZero()) {
+            runcounter++;
+            if (u.and(ONE).isOne()) {
+                BigInteger tmp = times(s, t);
+                s = tmp.mod(m);
+            }
+            u = u.shiftRight(1);
+            t = times(t, t).mod(m);
+        }
+
+        return s;
+    }
+
+    public BigInteger gcd(BigInteger y) {
+        int xval = ival;
+        int yval = y.ival;
+        if (words == null) {
+            if (xval == 0)
+                return abs(y);
+            if (y.words == null
+                    && xval != Integer.MIN_VALUE && yval != Integer.MIN_VALUE) {
+                if (xval < 0)
+                    xval = -xval;
+                if (yval < 0)
+                    yval = -yval;
+                return valueOf(gcd(xval, yval));
+            }
+            xval = 1;
+        }
+        if (y.words == null) {
+            if (yval == 0)
+                return abs(this);
+            yval = 1;
+        }
+        int len = (xval > yval ? xval : yval) + 1;
+        int[] xwords = new int[len];
+        int[] ywords = new int[len];
+        getAbsolute(xwords);
+        y.getAbsolute(ywords);
+        len = MPN.gcd(xwords, ywords, len);
+        BigInteger result = new BigInteger(0);
+        result.ival = len;
+        result.words = xwords;
+        return result.canonicalize();
+    }
+
+    /**
+     * <p>Returns <code>true</code> if this BigInteger is probably prime,
+     * <code>false</code> if it's definitely composite. If <code>certainty</code>
+     * is <code><= 0</code>, <code>true</code> is returned.</p>
+     *
+     * @param certainty a measure of the uncertainty that the caller is willing
+     *                  to tolerate: if the call returns <code>true</code> the probability that
+     *                  this BigInteger is prime exceeds <code>(1 - 1/2<sup>certainty</sup>)</code>.
+     *                  The execution time of this method is proportional to the value of this
+     *                  parameter.
+     * @return <code>true</code> if this BigInteger is probably prime,
+     *         <code>false</code> if it's definitely composite.
+     */
+    public boolean isProbablePrime(int certainty) {
+        if (certainty < 1)
+            return true;
+
+        /** We'll use the Rabin-Miller algorithm for doing a probabilistic
+         * primality test.  It is fast, easy and has faster decreasing odds of a
+         * composite passing than with other tests.  This means that this
+         * method will actually have a probability much greater than the
+         * 1 - .5^certainty specified in the JCL (p. 117), but I don't think
+         * anyone will complain about better performance with greater certainty.
+         *
+         * The Rabin-Miller algorithm can be found on pp. 259-261 of "Applied
+         * Cryptography, Second Edition" by Bruce Schneier.
+         */
+
+        // First rule out small prime factors
+        BigInteger rem = new BigInteger();
+        int i;
+        for (i = 0; i < primes.length; i++) {
+            if (words == null && ival == primes[i])
+                return true;
+            if (primes[i] - minFixNum >= smallFixNums.length) {
+                divide(this, BigInteger.valueOf(primes[i]), null, rem, TRUNCATE);
+            } else {
+                divide(this, smallFixNums[primes[i] - minFixNum], null, rem, TRUNCATE);
+            }
+            if (rem.canonicalize().isZero())
+                return false;
+        }
+
+        // Now perform the Rabin-Miller test.
+
+        // Set b to the number of times 2 evenly divides (this - 1).
+        // I.e. 2^b is the largest power of 2 that divides (this - 1).
+        BigInteger pMinus1 = add(this, -1);
+        int b = pMinus1.getLowestSetBit();
+
+        // Set m such that this = 1 + 2^b * m.
+        long val = 2L << b - 1;
+        BigInteger m = pMinus1.divide(valueOf(val));
+
+        // The HAC (Handbook of Applied Cryptography), Alfred Menezes & al. Note
+        // 4.49 (controlling the error probability) gives the number of trials
+        // for an error probability of 1/2**80, given the number of bits in the
+        // number to test.  we shall use these numbers as is if/when 'certainty'
+        // is less or equal to 80, and twice as much if it's greater.
+        int bits = this.bitLength();
+        for (i = 0; i < k.length; i++)
+            if (bits <= k[i])
+                break;
+        int trials = t[i];
+        if (certainty > 80)
+            trials *= 2;
+        BigInteger z;
+        for (int t = 0; t < trials; t++) {
+            // The HAC (Handbook of Applied Cryptography), Alfred Menezes & al.
+            // Remark 4.28 states: "...A strategy that is sometimes employed
+            // is to fix the bases a to be the first few primes instead of
+            // choosing them at random.
+            z = smallFixNums[primes[t] - minFixNum].modPow(m, this);
+            if (z.isOne() || z.equals(pMinus1))
+                continue;            // Passes the test; may be prime.
+
+            for (i = 0; i < b; ) {
+                if (z.isOne())
+                    return false;
+                i++;
+                if (z.equals(pMinus1))
+                    break;            // Passes the test; may be prime.
+
+                z = z.modPow(valueOf(2), this);
+            }
+
+            if (i == b && !z.equals(pMinus1))
+                return false;
+        }
+        return true;
+    }
+
+    private void setInvert() {
+        if (words == null)
+            ival = ~ival;
+        else {
+            for (int i = ival; --i >= 0; )
+                words[i] = ~words[i];
+        }
+    }
+
+    private void setShiftLeft(BigInteger x, int count) {
+        int[] xwords;
+        int xlen;
+        if (x.words == null) {
+            if (count < 32) {
+                set((long) x.ival << count);
+                return;
+            }
+            xwords = new int[1];
+            xwords[0] = x.ival;
+            xlen = 1;
+        } else {
+            xwords = x.words;
+            xlen = x.ival;
+        }
+        int word_count = count >> 5;
+        count &= 31;
+        int new_len = xlen + word_count;
+        if (count == 0) {
+            realloc(new_len);
+            for (int i = xlen; --i >= 0; )
+                words[i + word_count] = xwords[i];
+        } else {
+            new_len++;
+            realloc(new_len);
+            int shift_out = MPN.lshift(words, word_count, xwords, xlen, count);
+            count = 32 - count;
+            words[new_len - 1] = (shift_out << count) >> count;  // sign-extend.
+        }
+        ival = new_len;
+        for (int i = word_count; --i >= 0; )
+            words[i] = 0;
+    }
+
+    private void setShiftRight(BigInteger x, int count) {
+        if (x.words == null)
+            set(count < 32 ? x.ival >> count : x.ival < 0 ? -1 : 0);
+        else if (count == 0)
+            set(x);
+        else {
+            boolean neg = x.isNegative();
+            int word_count = count >> 5;
+            count &= 31;
+            int d_len = x.ival - word_count;
+            if (d_len <= 0)
+                set(neg ? -1 : 0);
+            else {
+                if (words == null || words.length < d_len)
+                    realloc(d_len);
+                MPN.rshift0(words, x.words, word_count, d_len, count);
+                ival = d_len;
+                if (neg)
+                    words[d_len - 1] |= -2 << (31 - count);
+            }
+        }
+    }
+
+    private void setShift(BigInteger x, int count) {
+        if (count > 0)
+            setShiftLeft(x, count);
+        else
+            setShiftRight(x, -count);
+    }
+
+    public BigInteger shiftLeft(int n) {
+        return shift(this, n);
+    }
+
+    public BigInteger shiftRight(int n) {
+        return shift(this, -n);
+    }
+
+    private void format(int radix, StringBuffer buffer) {
+        if (words == null)
+            buffer.append(Integer.toString(ival, radix));
+        else if (ival <= 2)
+            buffer.append(Long.toString(longValue(), radix));
+        else {
+            boolean neg = isNegative();
+            int[] work;
+            if (neg || radix != 16) {
+                work = new int[ival];
+                getAbsolute(work);
+            } else
+                work = words;
+            int len = ival;
+
+            if (radix == 16) {
+                if (neg)
+                    buffer.append('-');
+                int buf_start = buffer.length();
+                for (int i = len; --i >= 0; ) {
+                    int word = work[i];
+                    for (int j = 8; --j >= 0; ) {
+                        int hex_digit = (word >> (4 * j)) & 0xF;
+                        // Suppress leading zeros:
+                        if (hex_digit > 0 || buffer.length() > buf_start)
+                            buffer.append(Character.forDigit(hex_digit, 16));
+                    }
+                }
+            } else {
+                int i = buffer.length();
+                for (; ; ) {
+                    int digit = MPN.divmod_1(work, work, len, radix);
+                    buffer.append(Character.forDigit(digit, radix));
+                    while (len > 0 && work[len - 1] == 0) len--;
+                    if (len == 0)
+                        break;
+                }
+                if (neg)
+                    buffer.append('-');
+         /* Reverse buffer. */
+                int j = buffer.length() - 1;
+                while (i < j) {
+                    char tmp = buffer.charAt(i);
+                    buffer.setCharAt(i, buffer.charAt(j));
+                    buffer.setCharAt(j, tmp);
+                    i++;
+                    j--;
+                }
+            }
+        }
+    }
+
+    public String toString() {
+        return toString(16).toUpperCase();
+    }
+
+    public String toString(int radix) {
+        if (words == null)
+            return Integer.toString(ival, radix);
+        if (ival <= 2)
+            return Long.toString(longValue(), radix);
+        int buf_size = ival * (MPN.chars_per_word(radix) + 1);
+        StringBuffer buffer = new StringBuffer(buf_size);
+        format(radix, buffer);
+        return buffer.toString();
+    }
+
+    public int intValue() {
+        if (words == null)
+            return ival;
+        return words[0];
+    }
+
+    public long longValue() {
+        if (words == null)
+            return ival;
+        if (ival == 1)
+            return words[0];
+        return ((long) words[1] << 32) + ((long) words[0] & 0xffffffffL);
+    }
+
+    public int hashCode() {
+        // FIXME: May not match hashcode of JDK.
+        return words == null ? ival : (words[0] + words[ival - 1]);
+    }
+
+    /* Assumes this and obj are both canonicalized. */
+    public boolean equals(Object obj) {
+        if (!(obj instanceof BigInteger))
+            return false;
+        return equals(this, (BigInteger) obj);
+    }
+
+    public double doubleValue() {
+        if (words == null)
+            return (double) ival;
+        if (ival <= 2)
+            return (double) longValue();
+        if (isNegative())
+            return neg(this).roundToDouble(0, true, false);
+        return roundToDouble(0, false, false);
+    }
+
+    public float floatValue() {
+        return (float) doubleValue();
+    }
+
+    /**
+     * Return true if any of the lowest n bits are one.
+     * (false if n is negative).
+     */
+    private boolean checkBits(int n) {
+        if (n <= 0)
+            return false;
+        if (words == null)
+            return n > 31 || ((ival & ((1 << n) - 1)) != 0);
+        int i;
+        for (i = 0; i < (n >> 5); i++)
+            if (words[i] != 0)
+                return true;
+        return (n & 31) != 0 && (words[i] & ((1 << (n & 31)) - 1)) != 0;
+    }
+
+    /**
+     * Convert a semi-processed BigInteger to double.
+     * Number must be non-negative.  Multiplies by a power of two, applies sign,
+     * and converts to double, with the usual java rounding.
+     *
+     * @param exp       power of two, positive or negative, by which to multiply
+     * @param neg       true if negative
+     * @param remainder true if the BigInteger is the result of a truncating
+     *                  division that had non-zero remainder.  To ensure proper rounding in
+     *                  this case, the BigInteger must have at least 54 bits.
+     */
+    private double roundToDouble(int exp, boolean neg, boolean remainder) {
+        // Compute length.
+        int il = bitLength();
+
+        // Exponent when normalized to have decimal point directly after
+        // leading one.  This is stored excess 1023 in the exponent bit field.
+        exp += il - 1;
+
+        // Gross underflow.  If exp == -1075, we let the rounding
+        // computation determine whether it is minval or 0 (which are just
+        // 0x0000 0000 0000 0001 and 0x0000 0000 0000 0000 as bit
+        // patterns).
+        if (exp < -1075)
+            return neg ? -0.0 : 0.0;
+
+        // gross overflow
+        if (exp > 1023)
+            return neg ? Double.NEGATIVE_INFINITY : Double.POSITIVE_INFINITY;
+
+        // number of bits in mantissa, including the leading one.
+        // 53 unless it's denormalized
+        int ml = (exp >= -1022 ? 53 : 53 + exp + 1022);
+
+        // Get top ml + 1 bits.  The extra one is for rounding.
+        long m;
+        int excess_bits = il - (ml + 1);
+        if (excess_bits > 0)
+            m = ((words == null) ? ival >> excess_bits
+                    : MPN.rshift_long(words, ival, excess_bits));
+        else
+            m = longValue() << (-excess_bits);
+
+        // Special rounding for maxval.  If the number exceeds maxval by
+        // any amount, even if it's less than half a step, it overflows.
+        if (exp == 1023 && ((m >> 1) == (1L << 53) - 1)) {
+            if (remainder || checkBits(il - ml))
+                return neg ? Double.NEGATIVE_INFINITY : Double.POSITIVE_INFINITY;
+            else
+                return neg ? -Double.MAX_VALUE : Double.MAX_VALUE;
+        }
+
+        // Normal round-to-even rule: round up if the bit dropped is a one, and
+        // the bit above it or any of the bits below it is a one.
+        if ((m & 1) == 1
+                && ((m & 2) == 2 || remainder || checkBits(excess_bits))) {
+            m += 2;
+            // Check if we overflowed the mantissa
+            if ((m & (1L << 54)) != 0) {
+                exp++;
+                // renormalize
+                m >>= 1;
+            }
+            // Check if a denormalized mantissa was just rounded up to a
+            // normalized one.
+            else if (ml == 52 && (m & (1L << 53)) != 0)
+                exp++;
+        }
+
+        // Discard the rounding bit
+        m >>= 1;
+
+        long bits_sign = neg ? (1L << 63) : 0;
+        exp += 1023;
+        long bits_exp = (exp <= 0) ? 0 : ((long) exp) << 52;
+        long bits_mant = m & ~(1L << 52);
+        return Double.longBitsToDouble(bits_sign | bits_exp | bits_mant);
+    }
+
+    /**
+     * Copy the abolute value of this into an array of words.
+     * Assumes words.length >= (this.words == null ? 1 : this.ival).
+     * Result is zero-extended, but need not be a valid 2's complement number.
+     */
+    private void getAbsolute(int[] words) {
+        int len;
+        if (this.words == null) {
+            len = 1;
+            words[0] = this.ival;
+        } else {
+            len = this.ival;
+            for (int i = len; --i >= 0; )
+                words[i] = this.words[i];
+        }
+        if (words[len - 1] < 0)
+            negate(words, words, len);
+        for (int i = words.length; --i > len; )
+            words[i] = 0;
+    }
+
+    /**
+     * Destructively negate this.
+     */
+    private void setNegative() {
+        setNegative(this);
+    }
+
+    public BigInteger abs() {
+        return abs(this);
+    }
+
+    public BigInteger negate() {
+        return neg(this);
+    }
+
+    /**
+     * Calculates ceiling(log2(this < 0 ? -this : this+1))
+     * See Common Lisp: the Language, 2nd ed, p. 361.
+     */
+    public int bitLength() {
+        if (words == null)
+            return MPN.intLength(ival);
+        return MPN.intLength(words, ival);
+    }
+
+    public byte[] toByteArray() {
+        // Determine number of serialize needed.  The method bitlength returns
+        // the size without the sign bit, so add one bit for that and then
+        // add 7 more to emulate the ceil function using integer math.
+        byte[] bytes = new byte[(bitLength() + 1 + 7) / 8];
+        int nbytes = bytes.length;
+
+        int wptr = 0;
+        int word;
+
+        // Deal with words array until one word or less is left to process.
+        // If BigInteger is an int, then it is in ival and nbytes will be <= 4.
+        while (nbytes > 4) {
+            word = words[wptr++];
+            for (int i = 4; i > 0; --i, word >>= 8)
+                bytes[--nbytes] = (byte) word;
+        }
+
+        // Deal with the last few serialize.  If BigInteger is an int, use ival.
+        word = (words == null) ? ival : words[wptr];
+        for (; nbytes > 0; word >>= 8)
+            bytes[--nbytes] = (byte) word;
+
+        return bytes;
+    }
+
+    /**
+     * Return the logical (bit-wise) "and" of two BigIntegers.
+     */
+    public BigInteger and(BigInteger y) {
+        if (y.words == null)
+            return and(this, y.ival);
+        else if (words == null)
+            return and(y, ival);
+
+        BigInteger x = this;
+        if (ival < y.ival) {
+            BigInteger temp = this;
+            x = y;
+            y = temp;
+        }
+        int i;
+        int len = y.isNegative() ? x.ival : y.ival;
+        int[] words = new int[len];
+        for (i = 0; i < y.ival; i++)
+            words[i] = x.words[i] & y.words[i];
+        for (; i < len; i++)
+            words[i] = x.words[i];
+        return make(words, len);
+    }
+
+    /**
+     * Return the logical (bit-wise) "(inclusive) or" of two BigIntegers.
+     */
+    public BigInteger or(BigInteger y) {
+        return bitOp(7, this, y);
+    }
+
+    /**
+     * Return the logical (bit-wise) "exclusive or" of two BigIntegers.
+     */
+    public BigInteger xor(BigInteger y) {
+        return bitOp(6, this, y);
+    }
+
+    /**
+     * Return the logical (bit-wise) negation of a BigInteger.
+     */
+    public BigInteger not() {
+        return bitOp(12, this, ZERO);
+    }
+
+//
+//    public String getHex() {
+//        String c[] = new String[]{"0", "1", "2", "3", "4", "5", "6", "7", "8", "9", "A", "B", "C", "D", "E", "F"};
+//
+//        int[] arc=words;
+//        if (words==null || words.length==0) {
+//            arc=new int[]{ival};
+//        }
+//        StringBuilder ret=new StringBuilder();
+//        for (int i = arc.length - 1; i >= 0; i--) {
+//            int value = arc[i];
+//            int idx;
+////        idx=value>>60&0x0000000f;
+////        [ret appendString:c[idx]];
+////        idx=value>>56&0x0000000f;
+////        [ret appendString:c[idx]];
+////
+////        idx=value>>52&0x0000000f;
+////        [ret appendString:c[idx]];
+////        idx=value>>48&0x0000000f;
+////        [ret appendString:c[idx]];
+////
+////        idx=value>>44&0x0000000f;
+////        [ret appendString:c[idx]];
+////        idx=value>>40&0x0000000f;
+////        [ret appendString:c[idx]];
+////
+////        idx=value>>36&0x0000000f;
+////        [ret appendString:c[idx]];
+////        idx=value>>32&0x0000000f;
+////        [ret appendString:c[idx]];
+//
+//            idx = value >> 28 & 0x0000000f;
+//            ret.append(c[idx]);
+//            idx = value >> 24 & 0x0000000f;
+//            ret.append(c[idx]);
+//
+//            idx = value >> 20 & 0x0000000f;
+//            ret.append(c[idx]);
+//            idx = value >> 16 & 0x0000000f;
+//            ret.append(c[idx]);
+//
+//            idx = value >> 12 & 0x0000000f;
+//            ret.append(c[idx]);
+//            idx = value >> 8 & 0x0000000f;
+//            ret.append(c[idx]);
+//
+//            idx = value >> 4 & 0x0000000f;
+//            ret.append(c[idx]);
+//            idx = value & 0x0000000f;
+//            ret.append(c[idx]);
+//
+//        }
+//        return ret.toString();
+//    }
+
+    public BigInteger andNot(BigInteger val) {
+        return and(val.not());
+    }
+
+    public BigInteger clearBit(int n) {
+        if (n < 0)
+            throw new ArithmeticException();
+
+        return and(ONE.shiftLeft(n).not());
+    }
+
+    public BigInteger setBit(int n) {
+        if (n < 0)
+            throw new ArithmeticException();
+
+        return or(ONE.shiftLeft(n));
+    }
+
+    public boolean testBit(int n) {
+        if (n < 0)
+            throw new ArithmeticException();
+
+        return !and(ONE.shiftLeft(n)).isZero();
+    }
+
+    public BigInteger flipBit(int n) {
+        if (n < 0)
+            throw new ArithmeticException();
+
+        return xor(ONE.shiftLeft(n));
+    }
+
+    public int getLowestSetBit() {
+        if (isZero())
+            return -1;
+
+        if (words == null)
+            return MPN.findLowestBit(ival);
+        else
+            return MPN.findLowestBit(words);
+    }
+
+    /**
+     * Count one bits in a BigInteger.
+     * If argument is negative, count zero bits instead.
+     */
+    public int bitCount() {
+        int i, x_len;
+        int[] x_words = words;
+        if (x_words == null) {
+            x_len = 1;
+            i = bitCount(ival);
+        } else {
+            x_len = ival;
+            i = bitCount(x_words, x_len);
+        }
+        return isNegative() ? x_len * 32 - i : i;
+    }
+
+    public byte[] serialize() {
+        byte buffer[] = {0, 0, 0, 0};
+        ArrayList<Byte> dat = new ArrayList<Byte>();
+        //first 4 serialize == integer show length of this integer
+        // eg: 000004 => 4 serialize in length
+        // if < then maxValueInt => 4 serialize
+        if (this.words == null) {
+            //use iVal only
+            fillInteger(4, buffer);
+            dat.add(buffer[0]);
+            dat.add(buffer[1]);
+            dat.add(buffer[2]);
+            dat.add(buffer[3]);
+            fillInteger(ival, buffer);
+            dat.add(buffer[0]);
+            dat.add(buffer[1]);
+            dat.add(buffer[2]);
+            dat.add(buffer[3]);
+
+            byte[] ret = new byte[dat.size()];
+            for (int i = 0; i < dat.size(); i++) {
+                ret[i] = dat.get(i);
+            }
+            return ret;
+        }
+
+        fillInteger(ival * 4, buffer);
+        dat.add(buffer[0]);
+        dat.add(buffer[1]);
+        dat.add(buffer[2]);
+        dat.add(buffer[3]);
+
+        for (int j = ival - 1; j >= 0; j--) {
+            int v = words[j];
+//        if (j == self.dataSize - 1 && v == 0) continue; //Why!??!?!?
+            fillInteger(v, buffer);
+            dat.add(buffer[0]);
+            dat.add(buffer[1]);
+            dat.add(buffer[2]);
+            dat.add(buffer[3]);
+        }
+        byte[] ret = new byte[dat.size()];
+        for (int i = 0; i < dat.size(); i++) {
+            ret[i] = dat.get(i);
+        }
+        return ret;
+    }
+
+    public void pack() {
+        if (words == null) return;
+        if (ival > 0 && words.length == 0) {
+            words = null;
+            return;
+        }
+        if (words.length == 0) {
+            words = null;
+        } else {
+            ival = words.length;
+            while (ival > 0 && words[ival - 1] == 0) {
+
+                int[] newWords = new int[ival - 1];
+                System.arraycopy(words, 0, newWords, 0, ival - 1);
+                ival = newWords.length;
+                words = newWords;
+            }
+            if (ival == 1) {
+                ival = words[0];
+                words = null;
+            }
+            if (ival == 0) {
+                words = null;
+            }
+        }
     }
 }
