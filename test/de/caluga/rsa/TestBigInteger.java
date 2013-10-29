@@ -3,6 +3,7 @@ package de.caluga.rsa;
 import org.junit.Test;
 
 import java.security.SecureRandom;
+import java.util.List;
 
 /**
  * User: Stephan Bösebeck
@@ -19,7 +20,7 @@ public class TestBigInteger {
         BigInteger int2 = new BigInteger("2", 16);
         BigInteger res = int1.multiply(int2);
         String resStr = res.toString(16);
-        assert (resStr.equals("1E0"));
+        assert (resStr.equalsIgnoreCase("1E0"));
         BigInteger res2 = res.divide(int2);
         assert (res2.equals(int1));
     }
@@ -64,4 +65,31 @@ public class TestBigInteger {
         assert (int3.equals(result));
     }
 
+
+    @Test
+    public void testByteArrayConversion() {
+        BigInteger int1 = new BigInteger("0123456789ABCDEF0123456789ABCDEF0123456789ABCDEF01fefe23456789ABCDEF0123456789ABCDEF00000", 16);
+        byte[] dat = int1.serialize();
+        BigInteger int2 = new BigInteger("0");
+        int offset = BigInteger.fromBytes(int2, dat, 0);
+        byte[] dat2 = int2.serialize();
+        assert (Utils.getHex(dat).equals(Utils.getHex(dat2)));
+        assert (int1.equals(int2)) : "Values different: " + int1 + " != " + int2;
+//        System.out.println("int1: "+int1+" int1.ival: "+int1.getIval()+"  int1.words.length:"+int1.getWords().length);
+//        System.out.println("int2: "+int2+" int2.ival: "+int2.getIval()+"  int2.words.length:"+int2.getWords().length);
+    }
+
+
+    @Test
+    public void testSerializationToFromArray() {
+        SecureRandom rnd = new SecureRandom();
+        BigInteger int1 = new BigInteger(4096, rnd);
+        byte[] dat = int1.toByteArray(); //random data
+        List<BigInteger> lst = BigInteger.getIntegersOfBitLength(dat, 128);
+        System.out.println("List length: " + lst.size());
+        byte[] dat2 = BigInteger.dataFromBigIntArray(lst, 128);
+        assert (Utils.getHex(dat).equals(Utils.getHex(dat2)));
+
+
+    }
 }

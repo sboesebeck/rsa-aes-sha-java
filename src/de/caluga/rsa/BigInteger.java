@@ -225,7 +225,7 @@ public class BigInteger {
 
     private void init(int numBits, Random rnd) {
         int highbits = numBits & 31;
-        // minimum number of bytes to store the above number of bits
+        // minimum number of serialize to store the above number of bits
         int highBitByteCount = (highbits + 7) / 8;
         // number of bits to discard from the last byte
         int discardedBitCount = highbits % 8;
@@ -332,7 +332,7 @@ public class BigInteger {
         int[] words = new int[bytes.length / 4 + 1];
         int nwords = words.length;
 
-        // Create a int out of modulo 4 high order bytes.
+        // Create a int out of modulo 4 high order serialize.
         int bptr = 0;
         int word = sign;
         for (int i = bytes.length % 4; i > 0; --i, bptr++)
@@ -1774,7 +1774,7 @@ public class BigInteger {
     }
 
     public byte[] toByteArray() {
-        // Determine number of bytes needed.  The method bitlength returns
+        // Determine number of serialize needed.  The method bitlength returns
         // the size without the sign bit, so add one bit for that and then
         // add 7 more to emulate the ceil function using integer math.
         byte[] bytes = new byte[(bitLength() + 1 + 7) / 8];
@@ -1791,7 +1791,7 @@ public class BigInteger {
                 bytes[--nbytes] = (byte) word;
         }
 
-        // Deal with the last few bytes.  If BigInteger is an int, use ival.
+        // Deal with the last few serialize.  If BigInteger is an int, use ival.
         word = (words == null) ? ival : words[wptr];
         for (; nbytes > 0; word >>= 8)
             bytes[--nbytes] = (byte) word;
@@ -2245,12 +2245,12 @@ public class BigInteger {
         buffer[3 + position] = (byte) (((v) & 0xff));
     }
 
-    public byte[] bytes() {
+    public byte[] serialize() {
         byte buffer[] = {0, 0, 0, 0};
         ArrayList<Byte> dat = new ArrayList<Byte>();
-        //first 4 bytes == integer show length of this integer
-        // eg: 000004 => 4 bytes in length
-        // if < then maxValueInt => 4 bytes
+        //first 4 serialize == integer show length of this integer
+        // eg: 000004 => 4 serialize in length
+        // if < then maxValueInt => 4 serialize
         if (this.words == null) {
             //use iVal only
             fillInteger(4, buffer);
@@ -2294,7 +2294,7 @@ public class BigInteger {
     }
 
 
-    public static List<BigInteger> deSerializeInts(byte[] data) {
+    public static List<BigInteger> deSerialize(byte[] data) {
         List<BigInteger> ret = new ArrayList<BigInteger>();
         for (int i = 0; i < data.length; ) {
             BigInteger bi = new BigInteger();
@@ -2306,12 +2306,12 @@ public class BigInteger {
 
 
     public void pack() {
-        if (words == null && ival == 0) return;
+        if (words == null) return;
         if (ival > 0 && words.length == 0) {
             words = null;
             return;
         }
-        if (words != null && words.length == 0) {
+        if (words.length == 0) {
             words = null;
         } else {
             ival = words.length;
@@ -2398,7 +2398,7 @@ public class BigInteger {
     }
 
     public static List<BigInteger> getIntegersOfBitLength(byte[] data, int bitLen) {
-        int dataSize = (bitLen - 1) / 32; //bytes for this bitlength allowdd
+        int dataSize = (bitLen - 1) / 32; //serialize for this bitlength allowdd
         if ((bitLen - 1) % 32 != 0) {
             dataSize++;
         }
@@ -2465,6 +2465,7 @@ public class BigInteger {
                     bi.words = arr;
                     bi.ival = arr.length;
                 }
+
                 bi.pack();
                 ret.add(bi);
             }

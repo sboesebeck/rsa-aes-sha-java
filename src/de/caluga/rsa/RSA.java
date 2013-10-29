@@ -15,11 +15,74 @@ import java.util.List;
 public class RSA {
     private BigInteger n, d, e;
     private int bitLen;
-
     private String id;
 
     public RSA() {
 
+    }
+
+    public RSA(int bitlen) {
+        this.bitLen = bitlen;
+        SecureRandom r = new SecureRandom();
+        boolean retry = true;
+        while (retry) {
+            BigInteger p = new BigInteger(bitlen / 2, 100, r);
+            BigInteger q = new BigInteger(bitlen / 2, 100, r);
+            n = p.multiply(q);
+            BigInteger m = (p.subtract(BigInteger.ONE))
+                    .multiply(q.subtract(BigInteger.ONE));
+            while (true) {
+                e = new BigInteger(bitlen, new SecureRandom());
+                while (m.gcd(e).intValue() > 1) e = e.add(new BigInteger(bitlen, new SecureRandom()));
+                try {
+                    d = e.modInverse(m);
+                    System.out.println("BitLength d: " + d.bitLength());
+                    break;
+                } catch (Exception e) {
+                }
+            }
+
+            //Test encryption
+            BigInteger tst = new BigInteger(bitlen / 2 - 4, r);
+
+            String txt = tst.toString();
+            byte[] encrypt = this.encrypt(txt);
+            byte[] decrypt = this.decrypt(encrypt);
+            String dec = new String(decrypt);
+//            retry=!dec.equals(txt);
+//            if(retry) {
+//                System.out.println("Encryption Test failed - retrying");
+//                System.out.println("Tst: "+txt);
+//                System.out.println("Dec: "+dec);
+//            }
+            retry = false;
+        }
+    }
+
+    public RSA(BigInteger n, BigInteger d, BigInteger e, int bits) {
+        this.n = n;
+        this.d = d;
+        this.e = e;
+        this.bitLen = bits;
+    }
+
+    public static RSA publicKey(byte[] data) {
+        RSA ret = new RSA();
+        ret.setPublicKeyBytes(data);
+        return ret;
+    }
+
+    public static RSA fromBytes(byte[] data) {
+        List<BigInteger> lst = BigInteger.deSerialize(data);
+        if (lst.size() != 4) {
+            throw new IllegalArgumentException("byte array mismatch - " + lst.size());
+        }
+        BigInteger bitLen = lst.get(0);
+        BigInteger n = lst.get(1);
+        BigInteger e = lst.get(2);
+        BigInteger d = lst.get(3);
+        RSA ret = new RSA(n, d, e, bitLen.intValue());
+        return ret;
     }
 
     public String getId() {
@@ -28,26 +91,6 @@ public class RSA {
 
     public void setId(String id) {
         this.id = id;
-    }
-
-    public RSA(int bitlen) {
-        SecureRandom r = new SecureRandom();
-        BigInteger p = new BigInteger(bitlen / 2, 100, r);
-        BigInteger q = new BigInteger(bitlen / 2, 100, r);
-        n = p.multiply(q);
-        BigInteger m = (p.subtract(BigInteger.ONE))
-                .multiply(q.subtract(BigInteger.ONE));
-        while (true) {
-            e = new BigInteger(bitlen, new SecureRandom());
-            while (m.gcd(e).intValue() > 1) e = e.add(new BigInteger(bitlen, new SecureRandom()));
-            try {
-                d = e.modInverse(m);
-                System.out.println("BitLength d: " + d.bitLength());
-                break;
-            } catch (Exception e) {
-            }
-        }
-        this.bitLen = bitlen;
     }
 
     public BigInteger getN() {
@@ -70,7 +113,6 @@ public class RSA {
         this.bitLen = bitLen;
     }
 
-
     public RSA getPrivateKey() {
         RSA ret = new RSA();
         ret.n = this.n;
@@ -83,13 +125,6 @@ public class RSA {
         ret.n = this.n;
         ret.e = this.e;
         return ret;
-    }
-
-    public RSA(BigInteger n, BigInteger d, BigInteger e, int bits) {
-        this.n = n;
-        this.d = d;
-        this.e = e;
-        this.bitLen = bits;
     }
 
     /**
@@ -110,7 +145,7 @@ public class RSA {
         List<Byte> ret = new ArrayList<Byte>();
         for (BigInteger b : bi) {
             BigInteger enc = crypt(b, mp, mod);
-            byte[] encB = enc.bytes();
+            byte[] encB = enc.serialize();
             for (byte eb : encB) {
                 ret.add(eb);
             }
@@ -123,14 +158,13 @@ public class RSA {
         return bytes;
     }
 
-
     public byte[] decrypt(byte[] message) {
         return decrypt(message, d, n);
 
     }
 
     private byte[] decrypt(byte[] message, BigInteger mp, BigInteger mod) {
-        List<BigInteger> bi = BigInteger.deSerializeInts(message);
+        List<BigInteger> bi = BigInteger.deSerialize(message);
         List<Byte> ret = new ArrayList<Byte>();
         List<BigInteger> decrypted = new ArrayList<BigInteger>();
         for (BigInteger toDec : bi) {
@@ -139,7 +173,6 @@ public class RSA {
         }
         return BigInteger.dataFromBigIntArray(decrypted, bitLen - 4);
     }
-
 
     private BigInteger crypt(BigInteger message, BigInteger mp, BigInteger mod) {
         return message.modPow(mp, mod);
@@ -155,16 +188,16 @@ public class RSA {
 
     public byte[] getPrivateKeyBytes() {
         List<Byte> ret = new ArrayList<Byte>();
-        for (byte b : BigInteger.valueOf(getBitLen()).bytes()) {
+        for (byte b : BigInteger.valueOf(getBitLen()).serialize()) {
             ret.add(b);
         }
-        for (byte b : n.bytes()) {
+        for (byte b : n.serialize()) {
             ret.add(b);
         }
-//        for (byte b : e.bytes()) {
+//        for (byte b : e.serialize()) {
 //            ret.add(b);
 //        }
-        for (byte b : d.bytes()) {
+        for (byte b : d.serialize()) {
             ret.add(b);
         }
         byte[] bytes = new byte[ret.size()];
@@ -176,7 +209,7 @@ public class RSA {
     }
 
     public void setPrivateKeyBytes(byte[] b) {
-        List<BigInteger> lst = BigInteger.deSerializeInts(b);
+        List<BigInteger> lst = BigInteger.deSerialize(b);
         if (lst.size() != 3) {
             throw new IllegalArgumentException("Number of integers wrong");
         }
@@ -191,8 +224,30 @@ public class RSA {
         d = lst.get(2);
     }
 
+    public byte[] getPublicKeyBytes() {
+        List<Byte> ret = new ArrayList<Byte>();
+        for (byte b : BigInteger.valueOf(getBitLen()).serialize()) {
+            ret.add(b);
+        }
+        for (byte b : n.serialize()) {
+            ret.add(b);
+        }
+        for (byte b : e.serialize()) {
+            ret.add(b);
+        }
+//        for (byte b : d.serialize()) {
+//            ret.add(b);
+//        }
+        byte[] bytes = new byte[ret.size()];
+        for (int i = 0; i < bytes.length; i++) {
+            bytes[i] = ret.get(i);
+        }
+        return bytes;
+
+    }
+
     public void setPublicKeyBytes(byte[] b) {
-        List<BigInteger> lst = BigInteger.deSerializeInts(b);
+        List<BigInteger> lst = BigInteger.deSerialize(b);
         if (lst.size() != 3) {
             throw new IllegalArgumentException("Number of integers wrong");
         }
@@ -205,28 +260,6 @@ public class RSA {
         }
         n = lst.get(1);
         e = lst.get(2);
-    }
-
-    public byte[] getPublicKeyBytes() {
-        List<Byte> ret = new ArrayList<Byte>();
-        for (byte b : BigInteger.valueOf(getBitLen()).bytes()) {
-            ret.add(b);
-        }
-        for (byte b : n.bytes()) {
-            ret.add(b);
-        }
-        for (byte b : e.bytes()) {
-            ret.add(b);
-        }
-//        for (byte b : d.bytes()) {
-//            ret.add(b);
-//        }
-        byte[] bytes = new byte[ret.size()];
-        for (int i = 0; i < bytes.length; i++) {
-            bytes[i] = ret.get(i);
-        }
-        return bytes;
-
     }
 
     public boolean isValidSigned(byte[] signature, byte[] message) {
@@ -245,7 +278,6 @@ public class RSA {
         return md5.equals(Utils.getMd5String(message));
     }
 
-
     public byte[] sign(byte[] message) {
         String md5 = Utils.getMd5String(message);
         return encrypt(md5.getBytes(Charset.forName("UTF8")), d, n);
@@ -262,42 +294,22 @@ public class RSA {
                 '}';
     }
 
-    public static RSA publicKey(byte[] data) {
-        RSA ret = new RSA();
-        ret.setPublicKeyBytes(data);
-        return ret;
-    }
-
-    public static RSA fromBytes(byte[] data) {
-        List<BigInteger> lst = BigInteger.deSerializeInts(data);
-        if (lst.size() != 4) {
-            throw new IllegalArgumentException("byte array mismatch - " + lst.size());
-        }
-        BigInteger bitLen = lst.get(0);
-        BigInteger n = lst.get(1);
-        BigInteger e = lst.get(2);
-        BigInteger d = lst.get(3);
-        RSA ret = new RSA(n, d, e, bitLen.intValue());
-        return ret;
-    }
-
-
     public byte[] encrypt(String txt) {
         return encrypt(txt.getBytes(Charset.forName("UTF8")));
     }
 
     public byte[] bytes() {
         List<Byte> ret = new ArrayList<Byte>();
-        for (byte b : BigInteger.valueOf(getBitLen()).bytes()) {
+        for (byte b : BigInteger.valueOf(getBitLen()).serialize()) {
             ret.add(b);
         }
-        for (byte b : n.bytes()) {
+        for (byte b : n.serialize()) {
             ret.add(b);
         }
-        for (byte b : e.bytes()) {
+        for (byte b : e.serialize()) {
             ret.add(b);
         }
-        for (byte b : d.bytes()) {
+        for (byte b : d.serialize()) {
             ret.add(b);
         }
         byte[] bytes = new byte[ret.size()];
@@ -306,7 +318,6 @@ public class RSA {
         }
         return bytes;
     }
-
 
     public boolean hasPublicKey() {
         return n != null && e != null;

@@ -24,15 +24,18 @@ public class RSATest {
 
     @Test
     public void encryptDecryptTest() {
-        RSA r = new RSA(512);
-        String message = "A testmessage! A Testmessage!";
-        for (int i = 0; i < 10; i++) {
-            message += message;
+        for (int n = 0; n < 10; n++) {
+            System.out.println("Test no " + n);
+            RSA r = new RSA(512);
+            String message = "A testmessage! A Testmessage!";
+            for (int i = 0; i < 10; i++) {
+                message += message;
+            }
+            byte[] enc = r.encrypt(message);
+            byte[] dec = r.decrypt(enc);
+            String decoded = new String(dec, Charset.forName("UTF8"));
+            assert (decoded.equals(message)) : decoded + "!=" + message;
         }
-        byte[] enc = r.encrypt(message);
-        byte[] dec = r.decrypt(enc);
-        String decoded = new String(dec, Charset.forName("UTF8"));
-        assert (decoded.equals(message));
     }
 
     @Test
