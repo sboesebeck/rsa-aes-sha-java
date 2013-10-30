@@ -65,6 +65,14 @@ public class TestBigInteger {
         assert (int3.equals(result));
     }
 
+    @Test
+    public void testAdd() {
+        BigInteger tst1 = new BigInteger("34CB953482A3533C48847E93ABDF8050215", 16);
+        BigInteger tst2 = new BigInteger("34CB953482A3533C48847E93ABD1AC4F6C2", 16);
+        BigInteger tst3 = tst2.add(tst1);
+        int cmp = tst1.compareTo(tst2);
+    }
+
 
     @Test
     public void testByteArrayConversion() {
