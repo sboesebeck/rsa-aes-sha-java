@@ -91,5 +91,20 @@ public class TestBigInteger {
         assert (Utils.getHex(dat).equals(Utils.getHex(dat2)));
     }
 
+    @Test
+    public void testRemainder() {
+        BigInteger int1 = new BigInteger(128, new SecureRandom());
+        BigInteger add = BigInteger.valueOf(0);
+        for (int i = 0; i < 17; i++) {
+            add = add.add(int1);
+        }
+        BigInteger div = add.divide(int1);
+        assert (div.toString().equals("11"));
+        BigInteger int2 = int1.subtract(BigInteger.valueOf(1));
+        add = add.add(int2);
+        BigInteger[] res = add.divideAndRemainder(int1);
+        assert (res[0].equals(div));
+        assert (res[1].equals(int2));
+    }
 
 }
