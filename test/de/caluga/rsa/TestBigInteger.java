@@ -65,6 +65,19 @@ public class TestBigInteger {
         assert (int3.equals(result));
     }
 
+    @Test
+    public void primeTest() {
+
+        BigInteger int1 = new BigInteger("F1DA144956AFD98AEF578E45D99BF86D", 16);
+        BigInteger m = new BigInteger("3C76851255ABF662BBD5E3917666FE1B", 16);
+        BigInteger res1 = new BigInteger("3").modPow(m, int1);
+        BigInteger res2 = res1.mod(m);
+
+        System.out.println("PRimne: " + int1);
+
+        int1.isProbablePrime(100);
+    }
+
 
     @Test
     public void testByteArrayConversion() {
