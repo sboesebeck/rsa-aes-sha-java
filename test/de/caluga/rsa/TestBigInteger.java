@@ -64,13 +64,26 @@ public class TestBigInteger {
         assert (int2.equals(int3));
         assert (int3.equals(result));
     }
-
+    
     @Test
     public void testAdd() {
         BigInteger tst1 = new BigInteger("34CB953482A3533C48847E93ABDF8050215", 16);
         BigInteger tst2 = new BigInteger("34CB953482A3533C48847E93ABD1AC4F6C2", 16);
         BigInteger tst3 = tst2.add(tst1);
         int cmp = tst1.compareTo(tst2);
+    }
+    
+
+    @Test
+    public void primeTest() {
+        BigInteger int1 = new BigInteger("F1DA144956AFD98AEF578E45D99BF86D", 16);
+        BigInteger m = new BigInteger("3C76851255ABF662BBD5E3917666FE1B", 16);
+        BigInteger res1 = new BigInteger("3").modPow(m, int1);
+        BigInteger res2 = res1.mod(m);
+
+        System.out.println("PRimne: " + int1);
+
+        int1.isProbablePrime(100);
     }
 
 
@@ -99,5 +112,20 @@ public class TestBigInteger {
         assert (Utils.getHex(dat).equals(Utils.getHex(dat2)));
     }
 
+    @Test
+    public void testRemainder() {
+        BigInteger int1 = new BigInteger(128, new SecureRandom());
+        BigInteger add = BigInteger.valueOf(0);
+        for (int i = 0; i < 17; i++) {
+            add = add.add(int1);
+        }
+        BigInteger div = add.divide(int1);
+        assert (div.toString().equals("11"));
+        BigInteger int2 = int1.subtract(BigInteger.valueOf(1));
+        add = add.add(int2);
+        BigInteger[] res = add.divideAndRemainder(int1);
+        assert (res[0].equals(div));
+        assert (res[1].equals(int2));
+    }
 
 }
