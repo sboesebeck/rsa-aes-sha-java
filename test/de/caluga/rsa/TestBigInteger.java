@@ -64,7 +64,7 @@ public class TestBigInteger {
         assert (int2.equals(int3));
         assert (int3.equals(result));
     }
-    
+
     @Test
     public void testAdd() {
         BigInteger tst1 = new BigInteger("34CB953482A3533C48847E93ABDF8050215", 16);
@@ -72,7 +72,7 @@ public class TestBigInteger {
         BigInteger tst3 = tst2.add(tst1);
         int cmp = tst1.compareTo(tst2);
     }
-    
+
 
     @Test
     public void primeTest() {
@@ -110,6 +110,14 @@ public class TestBigInteger {
         System.out.println("List length: " + lst.size());
         byte[] dat2 = BigInteger.dataFromBigIntArray(lst, 128);
         assert (Utils.getHex(dat).equals(Utils.getHex(dat2)));
+    }
+
+    @Test
+    public void testModInverse() {
+        BigInteger int1 = new BigInteger("E10271E7CFF5BD11EC53B5D5C6718E486A8154148488546192672A6E7D700D08ABB3D08E973DC612ACBFD12FF0AA2802B737C74EE599423D4789FD55EA0C080649567EBBA7F791F10C5CD90124D67157E0E0B69519BF1135A295E985137A67C0", 16);
+        BigInteger int2 = new BigInteger("18FF86790796D5B318D6C11EAEF5AA20E8D9F4875513624ECA5C5A50D00387707D3D65C971B7F8FFDF5F1E47896C1080072B48FF793233D8EEB784A7C066513EF030146619F974AA6BB1DB564A1D23C67176CE588BC92F0A476C30B276D130E5", 16);
+        BigInteger d = int1.modInverse(int2);
+
     }
 
     @Test
