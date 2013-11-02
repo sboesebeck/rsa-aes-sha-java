@@ -171,7 +171,7 @@ public class RSA {
             BigInteger dec = crypt(toDec, mp, mod);
             decrypted.add(dec);
         }
-        return BigInteger.dataFromBigIntArray(decrypted, bitLen - 4);
+        return BigInteger.dataFromBigIntArray(decrypted, true);
     }
 
     private BigInteger crypt(BigInteger message, BigInteger mp, BigInteger mod) {

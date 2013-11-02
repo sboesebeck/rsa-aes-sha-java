@@ -104,12 +104,15 @@ public class TestBigInteger {
     @Test
     public void testSerializationToFromArray() {
         SecureRandom rnd = new SecureRandom();
-        BigInteger int1 = new BigInteger(148, rnd);
-        byte[] dat = int1.toByteArray(); //just random data
-        List<BigInteger> lst = BigInteger.getIntegersOfBitLength(dat, 128);
-        System.out.println("List length: " + lst.size());
-        byte[] dat2 = BigInteger.dataFromBigIntArray(lst, 128);
-        assert (Utils.getHex(dat).equals(Utils.getHex(dat2)));
+        for (int i = 0; i < 100; i++) {
+            BigInteger int1 = new BigInteger(512, rnd);
+            byte[] dat = int1.toByteArray(); //just random data
+            dat[0] = 0;
+            List<BigInteger> lst = BigInteger.getIntegersOfBitLength(dat, 128);
+            System.out.println("List length: " + lst.size());
+            byte[] dat2 = BigInteger.dataFromBigIntArray(lst);
+            assert (Utils.getHex(dat).equals(Utils.getHex(dat2)));
+        }
     }
 
     @Test

@@ -1187,7 +1187,11 @@ public class BigInteger {
         return ret;
     }
 
-    public static byte[] dataFromBigIntArray(List<BigInteger> lst, int bitLen) {
+    public static byte[] dataFromBigIntArray(List<BigInteger> lst) {
+        return dataFromBigIntArray(lst, true);
+    }
+
+    public static byte[] dataFromBigIntArray(List<BigInteger> lst, boolean prefixed) {
         ArrayList<Byte> ret = new ArrayList<Byte>();
 
         for (int i = 0; i < lst.size(); i++) {
@@ -1221,31 +1225,19 @@ public class BigInteger {
                     skip = false;
                 }
             } else {
-                for (int j = integer.ival - 1; j >= 0; j--) {
+                for (int j = integer.ival - (prefixed ? 2 : 1); j >= 0; j--) {
                     long v = integer.words[j];
                     char val = (char) ((v >> 24) & 0xff);
-//                    if (val != 0 || !skip) {
                     ret.add((byte) (val & 0xff));
-//                        skip = false;
-//                    }
 
                     val = (char) ((v >> 16) & 0xff);
-//                    if (val != 0 || !skip) {
                     ret.add((byte) (val & 0xff));
-//                        skip = false;
-//                    }
 
                     val = (char) ((v >> 8) & 0xff);
-//                    if (val != 0 || !skip) {
                     ret.add((byte) (val & 0xff));
-//                        skip = false;
-//                    }
 
                     val = (char) ((v) & 0xff);
-//                    if (val != 0 || !skip) {
                     ret.add((byte) (val & 0xff));
-//                        skip = false;
-//                    }
 
                 }
             }
@@ -1283,69 +1275,72 @@ public class BigInteger {
         int rangeLocation = 0;
         int rangeLength = 0;
         int skip = 0;
-        int skipInts = 0;
-//    NSLog(@"ints allowed %d, own key length %d Bit, number of BigIntegers %d => Length of self to decode %d byte", dataSize, bitLen, numBis, (int) self.length);
         List<BigInteger> ret = new ArrayList<BigInteger>();
 
-        while (ret.size() < numBis) {
-            //creating numBis integers
-            for (int loc = 0; loc < data.length; loc += (dataSize * 4)) {
-                int[] numDat = new int[dataSize];
-                int numDatIdx = dataSize - 1;
-                rangeLocation = loc;
-                if (loc + dataSize * 4 > data.length) {
-                    rangeLength = data.length - loc;
-                } else {
-                    rangeLength = dataSize * 4;
-                }
+//        while (ret.size() < numBis) {
+        //creating numBis integers
+        for (int loc = 0; loc < data.length; loc += (dataSize * 4)) {
 
-//            NSLog(@"Got buffer %d, %d    %@", range.location, range.length, [[NSData dataWithBytes:(buffer + range.location) length:range.length] hexDump:NO]);
-                int i = 0;
-                for (i = rangeLocation; i < rangeLocation + rangeLength; i += 4) {
-                    byte c = data[i];
-//                NSLog(@"Processing idx %d-%d", i, i + 4);
-                    long v = (long) (c & 0xff) << 24;
-                    if (i + 1 >= rangeLocation + rangeLength) {
-                        numDat[numDatIdx--] = (int) (v & 0xffffffff);
-                        skip = 24;
-                        break;
-                    }
-                    c = data[i + 1];
-                    v |= (long) (c & 0xff) << 16;
-
-                    if (i + 2 >= rangeLocation + rangeLength) {
-                        numDat[numDatIdx--] = (int) (v & 0xffffffff);
-                        skip = 16;
-                        break;
-                    }
-                    c = data[i + 2];
-                    v |= (long) (c & 0xff) << 8;
-
-                    if (i + 3 >= rangeLocation + rangeLength) {
-                        numDat[numDatIdx--] = (int) (v & 0xffffffff);
-                        skip = 8;
-                        break;
-                    }
-                    c = data[i + 3];
-                    v |= (long) (c & 0xff);
-                    numDat[numDatIdx--] = (int) (v & 0xffffffff);
-                    skip = 0;
-                }
-                BigInteger bi = new BigInteger(numDat, dataSize);
-                if (numDatIdx > -1) {
-                    numDatIdx += 1;
-                    int arr[] = new int[bi.ival - numDatIdx];
-                    System.arraycopy(bi.words, numDatIdx, arr, 0, arr.length);
-                    bi.words = arr;
-                    bi.ival = arr.length;
-                }
-
-                bi.pack();
-                ret.add(bi);
+            int numDatIdx = 0;
+            rangeLocation = loc;
+            if (loc + dataSize * 4 > data.length) {
+                rangeLength = data.length - loc;
+                dataSize = data.length - loc / 4;
+            } else {
+                rangeLength = dataSize * 4;
             }
 
+            int[] numDat = new int[dataSize + 1];
+            numDat[dataSize] = dataSize;
+            numDatIdx = dataSize - 1;
 
+//            NSLog(@"Got buffer %d, %d    %@", range.location, range.length, [[NSData dataWithBytes:(buffer + range.location) length:range.length] hexDump:NO]);
+            int i = 0;
+            for (i = rangeLocation; i < rangeLocation + rangeLength; i += 4) {
+                byte c = data[i];
+//                NSLog(@"Processing idx %d-%d", i, i + 4);
+                long v = (long) (c & 0xff) << 24;
+                if (i + 1 >= rangeLocation + rangeLength) {
+                    numDat[numDatIdx--] = (int) (v & 0xffffffff);
+                    skip = 24;
+                    break;
+                }
+                c = data[i + 1];
+                v |= (long) (c & 0xff) << 16;
+
+                if (i + 2 >= rangeLocation + rangeLength) {
+                    numDat[numDatIdx--] = (int) (v & 0xffffffff);
+                    skip = 16;
+                    break;
+                }
+                c = data[i + 2];
+                v |= (long) (c & 0xff) << 8;
+
+                if (i + 3 >= rangeLocation + rangeLength) {
+                    numDat[numDatIdx--] = (int) (v & 0xffffffff);
+                    skip = 8;
+                    break;
+                }
+                c = data[i + 3];
+                v |= (long) (c & 0xff);
+                numDat[numDatIdx--] = (int) (v & 0xffffffff);
+                skip = 0;
+            }
+            BigInteger bi = new BigInteger(numDat, dataSize + 1);
+            if (numDatIdx > -1) {
+                numDatIdx += 1;
+                int arr[] = new int[bi.ival - numDatIdx];
+                System.arraycopy(bi.words, numDatIdx, arr, 0, arr.length);
+                bi.words = arr;
+                bi.ival = arr.length;
+            }
+
+            bi.pack();
+            ret.add(bi);
         }
+
+
+//        }
         if (skip > 0) {
             BigInteger bi = ret.get(ret.size() - 1);
             ret.remove(ret.size() - 1);
