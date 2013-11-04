@@ -50,6 +50,17 @@ public class RSATest {
     }
 
     @Test
+    public void longTextTest() {
+        RSA r = new RSA(1024);
+        String message = "A testmessage! A Testmessage!";
+        for (int i = 0; i < 10; i++) message = message + message;
+        byte[] enc = r.encrypt(message);
+        byte[] dec = r.decrypt(enc);
+        String str = new String(dec);
+        assert (str.equals(message));
+    }
+
+    @Test
     public void communicationTest() {
         RSA serverKeyPair = new RSA(2048);
         RSA clientKeypair = new RSA(512);

@@ -1198,6 +1198,9 @@ public class BigInteger {
             BigInteger integer = lst.get(i);
             //stepping through integers
             if (integer.words == null || integer.words.length == 0) {
+                if (prefixed) {
+                    throw new IllegalArgumentException("Cannot create prefixed data from simple bigInteger!");
+                }
                 boolean skip = true;
                 //simple
                 long v = integer.ival;
@@ -1225,20 +1228,51 @@ public class BigInteger {
                     skip = false;
                 }
             } else {
-                for (int j = integer.ival - (prefixed ? 2 : 1); j >= 0; j--) {
+                int j = integer.ival - (prefixed ? 2 : 1);
+                int skipBytes = 0;
+                if (prefixed) {
+                    int pr = integer.words[integer.words.length - 1];
+                    if (pr < (integer.words.length - 1) * 4) {
+                        skipBytes = (integer.words.length - 1) * 4 - pr;
+                    }
+                }
+                int skip = skipBytes;
+                for (; j >= 0; j--) {
                     long v = integer.words[j];
-                    char val = (char) ((v >> 24) & 0xff);
-                    ret.add((byte) (val & 0xff));
+                    char val = 0;
+                    if (skip > 0) {
+                        skip--;
+                    } else {
+                        val = (char) ((v >> 24) & 0xff);
+                        ret.add((byte) (val & 0xff));
+                    }
 
-                    val = (char) ((v >> 16) & 0xff);
-                    ret.add((byte) (val & 0xff));
+                    if (skip > 0) {
+                        skip--;
+                    } else {
+                        val = (char) ((v >> 16) & 0xff);
+                        ret.add((byte) (val & 0xff));
+                    }
 
-                    val = (char) ((v >> 8) & 0xff);
-                    ret.add((byte) (val & 0xff));
+                    if (skip > 0) {
+                        skip--;
+                    } else {
+                        val = (char) ((v >> 8) & 0xff);
+                        ret.add((byte) (val & 0xff));
+                    }
 
-                    val = (char) ((v) & 0xff);
-                    ret.add((byte) (val & 0xff));
+                    if (skip > 0) {
+                        skip--;
+                    } else {
+                        val = (char) ((v) & 0xff);
+                        ret.add((byte) (val & 0xff));
+                    }
 
+                    if (skipBytes > 4) {
+                        skipBytes = skipBytes - 4;
+                    } else {
+                        skipBytes = 0;
+                    }
                 }
             }
 
@@ -1344,9 +1378,24 @@ public class BigInteger {
         if (skip > 0) {
             BigInteger bi = ret.get(ret.size() - 1);
             ret.remove(ret.size() - 1);
+
+            //removing prefix
+            int len = bi.words[bi.words.length - 1];
+            len = len - skip / 8;
+            bi.words[bi.words.length - 1] = 0;
+
             if (!bi.isZero()) {
                 bi = bi.shiftRight(skip);
                 bi.pack();
+
+                int[] dat = new int[bi.ival + 1];
+                dat[bi.ival] = len;
+
+                for (int i = bi.ival - 1; i >= 0; i--) {
+                    dat[i] = bi.words[i];
+                }
+                bi.words = dat;
+                bi.ival++;
                 if (!bi.isZero()) {
                     ret.add(bi);
                 }
