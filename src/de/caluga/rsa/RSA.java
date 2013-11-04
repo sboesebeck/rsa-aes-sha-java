@@ -171,7 +171,7 @@ public class RSA {
             BigInteger dec = crypt(toDec, mp, mod);
             decrypted.add(dec);
         }
-        return BigInteger.dataFromBigIntArray(decrypted, true);
+        return BigInteger.dataFromBigIntArray(decrypted, false);
     }
 
     private BigInteger crypt(BigInteger message, BigInteger mp, BigInteger mod) {
@@ -249,7 +249,7 @@ public class RSA {
     public void setPublicKeyBytes(byte[] b) {
         List<BigInteger> lst = BigInteger.deSerialize(b);
         if (lst.size() != 3) {
-            throw new IllegalArgumentException("Number of integers wrong");
+            throw new IllegalArgumentException("Number of integers wrong, should be 3, but is " + lst.size());
         }
         if (bitLen != 0 && lst.get(0).intValue() != bitLen) {
             System.out.println("WARNING! bitlength mismatch!");

@@ -1325,7 +1325,7 @@ public class BigInteger {
             }
 
             int[] numDat = new int[dataSize + 1];
-            numDat[dataSize] = dataSize;
+            numDat[dataSize] = dataSize * 4;
             numDatIdx = dataSize - 1;
 
 //            NSLog(@"Got buffer %d, %d    %@", range.location, range.length, [[NSData dataWithBytes:(buffer + range.location) length:range.length] hexDump:NO]);
