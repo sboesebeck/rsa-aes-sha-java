@@ -8,7 +8,7 @@
     <packaging>jar</packaging>
 
     <name>RSAJava</name>
-    <url>http://caluga.de</url>
+    <url>http://caluga.de/rsa</url>
     <description>
         Java Implementation of RSA algorithm
     </description>
