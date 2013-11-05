@@ -4,6 +4,8 @@ import org.junit.Test;
 
 import java.nio.charset.Charset;
 import java.security.SecureRandom;
+import java.util.ArrayList;
+import java.util.List;
 
 /**
  * User: Stephan Bösebeck
@@ -28,7 +30,7 @@ public class RSATest {
             System.out.println("Test no " + n);
             RSA r = new RSA(512);
             String message = "A testmessage! A Testmessage!";
-            for (int i = 0; i < 10; i++) {
+            for (int i = 0; i < 0; i++) {
                 message += message;
             }
             byte[] enc = r.encrypt(message);
@@ -58,6 +60,30 @@ public class RSATest {
         byte[] dec = r.decrypt(enc);
         String str = new String(dec);
         assert (str.equals(message));
+    }
+
+    @Test
+    public void conversionTest() {
+        List<Byte> bytes = new ArrayList<>();
+        for (int i = 0; i < 112; i++) {
+            bytes.add((byte) (Math.random() * 256));
+        }
+        byte[] arr = new byte[bytes.size()];
+        int cnt = 0;
+        for (Byte b : bytes) {
+            arr[cnt++] = b;
+        }
+        System.out.println("Data: " + Utils.getHex(arr));
+        //got random data
+        List<BigInteger> bis = BigInteger.getIntegersOfBitLength(arr, 120);
+        System.out.println("Got bigIntegers: " + bis.size());
+        byte res[] = BigInteger.dataFromBigIntArray(bis);
+        assert (res.length == arr.length) : "Array sizes differ!";
+        for (int i = 0; i < res.length; i++) {
+            assert (res[i] == arr[i]);
+        }
+        System.out.println("res : " + Utils.getHex(res));
+        System.out.println("done");
     }
 
     @Test

@@ -44,17 +44,18 @@ public class RSA {
 
             //Test encryption
             BigInteger tst = new BigInteger(bitlen / 2 - 4, r);
-
-            String txt = tst.toString();
-            byte[] encrypt = this.encrypt(txt);
-            byte[] decrypt = this.decrypt(encrypt);
-            String dec = new String(decrypt);
-//            retry=!dec.equals(txt);
-//            if(retry) {
-//                System.out.println("Encryption Test failed - retrying");
-//                System.out.println("Tst: "+txt);
-//                System.out.println("Dec: "+dec);
-//            }
+            BigInteger enc = this.encrypt(tst);
+            BigInteger dec = this.decrypt(enc);
+//            String txt = tst.toString();
+//            byte[] encrypt = this.encrypt(txt);
+//            byte[] decrypt = this.decrypt(encrypt);
+//            String dec = new String(decrypt);
+            retry = !dec.equals(tst);
+            if (retry) {
+                System.out.println("Encryption Test failed - retrying");
+                System.out.println("Tst: " + tst);
+                System.out.println("Dec: " + dec);
+            }
             retry = false;
         }
     }
@@ -141,7 +142,7 @@ public class RSA {
         if (mp == null || mod == null) {
             throw new IllegalArgumentException("key not initialized");
         }
-        List<BigInteger> bi = BigInteger.getIntegersOfBitLength(message, bitLen);
+        List<BigInteger> bi = BigInteger.getIntegersOfBitLength(message, bitLen / 2 - 16); //considering prefix
         List<Byte> ret = new ArrayList<Byte>();
         for (BigInteger b : bi) {
             BigInteger enc = crypt(b, mp, mod);
@@ -171,7 +172,7 @@ public class RSA {
             BigInteger dec = crypt(toDec, mp, mod);
             decrypted.add(dec);
         }
-        return BigInteger.dataFromBigIntArray(decrypted, false);
+        return BigInteger.dataFromBigIntArray(decrypted);
     }
 
     private BigInteger crypt(BigInteger message, BigInteger mp, BigInteger mod) {

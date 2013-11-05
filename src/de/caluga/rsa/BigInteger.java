@@ -1231,9 +1231,9 @@ public class BigInteger {
                 int j = integer.ival - (prefixed ? 2 : 1);
                 int skipBytes = 0;
                 if (prefixed) {
-                    int pr = integer.words[integer.words.length - 1];
-                    if (pr < (integer.words.length - 1) * 4) {
-                        skipBytes = (integer.words.length - 1) * 4 - pr;
+                    int pr = integer.words[integer.ival - 1];
+                    if (pr < (integer.ival - 1) * 4) {
+                        skipBytes = (integer.ival - 1) * 4 - pr;
                     }
                 }
                 int skip = skipBytes;
@@ -1319,7 +1319,8 @@ public class BigInteger {
             rangeLocation = loc;
             if (loc + dataSize * 4 > data.length) {
                 rangeLength = data.length - loc;
-                dataSize = data.length - loc / 4;
+                dataSize = rangeLength / 4;
+                if ((rangeLength) % 4 != 0) dataSize++;
             } else {
                 rangeLength = dataSize * 4;
             }
