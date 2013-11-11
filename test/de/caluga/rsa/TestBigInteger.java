@@ -111,7 +111,13 @@ public class TestBigInteger {
             List<BigInteger> lst = BigInteger.getIntegersOfBitLength(dat, 128);
             System.out.println("List length: " + lst.size());
             byte[] dat2 = BigInteger.dataFromBigIntArray(lst);
-            assert (Utils.getHex(dat).equals(Utils.getHex(dat2)));
+            String dat2Hex = Utils.getHex(dat2);
+            String datHex = Utils.getHex(dat);
+            System.out.println("Dat2: " + dat2Hex);
+            System.out.println("Dat : " + datHex);
+
+            assert (datHex.equals(dat2Hex));
+            System.out.println("");
         }
     }
 

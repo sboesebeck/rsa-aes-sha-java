@@ -1387,21 +1387,35 @@ public class BigInteger {
 
             if (!bi.isZero()) {
                 bi = bi.shiftRight(skip);
-                bi.pack();
+//                bi.pack();
+                if (bi.words == null) {
+                    System.out.println("Bi.words is null - value: " + bi.toString(16));
+                    int[] dat = new int[2];
+                    dat[1] = len;
+                    dat[0] = bi.ival;
+                    bi.words = dat;
+                    bi.ival = 2;
+                    if (!bi.isZero()) {
+                        ret.add(bi);
+                    }
+                } else {
+                    int[] dat = new int[bi.ival + 1];
+                    dat[bi.ival] = len;
 
-                int[] dat = new int[bi.ival + 1];
-                dat[bi.ival] = len;
+                    for (int i = bi.ival - 1; i >= 0; i--) {
+                        dat[i] = bi.words[i];
+                    }
+                    bi.words = dat;
+                    bi.ival++;
+                    if (!bi.isZero()) {
+                        ret.add(bi);
+                    }
+                }
 
-                for (int i = bi.ival - 1; i >= 0; i--) {
-                    dat[i] = bi.words[i];
-                }
-                bi.words = dat;
-                bi.ival++;
-                if (!bi.isZero()) {
-                    ret.add(bi);
-                }
+
             }
         }
+
         return ret;
     }
 
