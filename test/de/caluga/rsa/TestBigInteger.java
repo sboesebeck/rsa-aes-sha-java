@@ -130,19 +130,33 @@ public class TestBigInteger {
     }
 
     @Test
-    public void testRemainder() {
-        BigInteger int1 = new BigInteger(128, new SecureRandom());
-        BigInteger add = BigInteger.valueOf(0);
-        for (int i = 0; i < 17; i++) {
-            add = add.add(int1);
-        }
+    public void testRemSpecial() {
+        BigInteger int1 = new BigInteger("95BAB494605447CFB7069B7F8B65F980", 16);
+        BigInteger add = new BigInteger("9F165FDDA6598C4CB2770537841C59180", 16);
         BigInteger div = add.divide(int1);
-        assert (div.toString().equals("11"));
-        BigInteger int2 = int1.subtract(BigInteger.valueOf(1));
-        add = add.add(int2);
-        BigInteger[] res = add.divideAndRemainder(int1);
-        assert (res[0].equals(div));
-        assert (res[1].equals(int2));
+        assert (div.toString().equals("11")) : div.toString();
+
+    }
+
+    @Test
+    public void testRemainder() {
+        for (int c = 0; c < 1000; c++) {
+            BigInteger int1 = new BigInteger(128 + c, new SecureRandom());
+            BigInteger add = BigInteger.valueOf(0);
+            for (int i = 0; i < 17; i++) {
+                add = add.add(int1);
+            }
+            BigInteger div = add.divide(int1);
+            if (!div.toString().equals("11")) {
+                div = add.divide(int1);
+                assert (div.toString().equals("11")) : div.toString();
+            }
+            BigInteger int2 = int1.subtract(BigInteger.valueOf(1));
+            add = add.add(int2);
+            BigInteger[] res = add.divideAndRemainder(int1);
+            assert (res[0].equals(div)) : "res[0]=" + res[0].toString() + " div=" + div.toString();
+            assert (res[1].equals(int2)) : "res[1]=" + res[0].toString() + " int2=" + int2.toString();
+        }
     }
 
 }

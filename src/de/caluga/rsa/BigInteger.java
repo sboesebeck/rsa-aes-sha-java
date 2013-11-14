@@ -12,39 +12,6 @@ import java.util.Random;
  * TODO: Add documentation here
  */
 public class BigInteger {
-    private static final int minFixNum = -100;
-    private static final int maxFixNum = 2048;
-    private static final int numFixNum = maxFixNum - minFixNum + 1;
-    private static final BigInteger[] smallFixNums = new BigInteger[numFixNum];
-
-    static {
-        for (int i = numFixNum; --i >= 0; )
-            smallFixNums[i] = new BigInteger(i + minFixNum);
-    }
-
-    /**
-     * The constant zero as a BigInteger.
-     *
-     * @since 1.2
-     */
-    public static final BigInteger ZERO = smallFixNums[0 - minFixNum];
-    /**
-     * The constant one as a BigInteger.
-     *
-     * @since 1.2
-     */
-    public static final BigInteger ONE = smallFixNums[1 - minFixNum];
-    /**
-     * The constant ten as a BigInteger.
-     *
-     * @since 1.5
-     */
-    public static final BigInteger TEN = smallFixNums[10 - minFixNum];
-    /**
-     * We pre-allocate integers in the range minFixNum..maxFixNum.
-     * Note that we must at least preallocate 0, 1, and 10.
-     */
-
 
 
     /* Rounding modes: */
@@ -150,9 +117,9 @@ public class BigInteger {
     private BigInteger() {
     }
 
-    /* Create a new (non-shared) BigInteger, and initialize to an int. */
-    private BigInteger(int value) {
+    public BigInteger(int value) {
         ival = value;
+        words = null;
     }
 
     public BigInteger(String val, int radix) {
@@ -251,8 +218,6 @@ public class BigInteger {
      * Return a (possibly-shared) BigInteger with a given long value.
      */
     public static BigInteger valueOf(long val) {
-        if (val >= minFixNum && val <= maxFixNum)
-            return smallFixNums[(int) val - minFixNum];
         int i = (int) val;
         if ((long) i == val)
             return new BigInteger(i);
@@ -272,7 +237,7 @@ public class BigInteger {
             return valueOf(len);
         len = BigInteger.wordsNeeded(words, len);
         if (len <= 1)
-            return len == 0 ? ZERO : valueOf(words[0]);
+            return len == 0 ? new BigInteger(0) : valueOf(words[0]);
         BigInteger num = new BigInteger();
         num.words = words;
         num.ival = len;
@@ -408,7 +373,7 @@ public class BigInteger {
 
     private static BigInteger times(BigInteger x, int y) {
         if (y == 0)
-            return ZERO;
+            return new BigInteger(0);
         if (y == 1)
             return x;
         int[] xwords = x.words;
@@ -743,7 +708,7 @@ public class BigInteger {
             // Success:  values are indeed invertible!
             // Bottom of the recursion reached; start unwinding.
             xy[0] = neg(prevDiv);
-            xy[1] = ONE;
+            xy[1] = new BigInteger(1);
             return;
         }
 
@@ -860,7 +825,7 @@ public class BigInteger {
         int[] words = new int[byte_len / chars_per_word + 1];
         int size = MPN.set_str(words, digits, byte_len, radix);
         if (size == 0)
-            return ZERO;
+            return new BigInteger(0);
         if (words[size - 1] < 0)
             words[size++] = 0;
         if (negative)
@@ -912,7 +877,7 @@ public class BigInteger {
     private static BigInteger bitOp(int op, BigInteger x, BigInteger y) {
         switch (op) {
             case 0:
-                return ZERO;
+                return new BigInteger(0);
             case 1:
                 return x.and(y);
             case 3:
@@ -1555,8 +1520,8 @@ public class BigInteger {
                 ival = words[0];
             words = null;
         }
-        if (words == null && ival >= minFixNum && ival <= maxFixNum)
-            return smallFixNums[ival - minFixNum];
+//        if (words == null && ival >= minFixNum && ival <= maxFixNum)
+//            return smallFixNums[ival - minFixNum];
         return this;
     }
 
@@ -1688,7 +1653,7 @@ public class BigInteger {
     public BigInteger pow(int exponent) {
         if (exponent <= 0) {
             if (exponent == 0)
-                return ONE;
+                return new BigInteger(1);
             throw new ArithmeticException("negative exponent");
         }
         if (isZero())
@@ -1738,9 +1703,9 @@ public class BigInteger {
 
         // Degenerate cases.
         if (y.isOne())
-            return ZERO;
+            return new BigInteger(0);
         if (isOne())
-            return ONE;
+            return new BigInteger(1);
 
         // Use Euclid's algorithm as in gcd() but do this recursively
         // rather than in a loop so we can use the intermediate results as we
@@ -1824,13 +1789,13 @@ public class BigInteger {
         //
         // We'll use the algorithm for Additive Chaining which can be found on
         // p. 244 of "Applied Cryptography, Second Edition" by Bruce Schneier.
-        BigInteger s = ONE;
+        BigInteger s = new BigInteger(1);
         BigInteger t = this;
         BigInteger u = exponent;
         int runcounter = 0;
         while (!u.isZero()) {
             runcounter++;
-            if (u.and(ONE).isOne()) {
+            if (u.and(new BigInteger(1)).isOne()) {
                 BigInteger tmp = times(s, t);
                 s = tmp.mod(m);
             }
@@ -1908,11 +1873,7 @@ public class BigInteger {
         for (i = 0; i < primes.length; i++) {
             if (words == null && ival == primes[i])
                 return true;
-            if (primes[i] - minFixNum >= smallFixNums.length) {
-                divide(this, BigInteger.valueOf(primes[i]), null, rem, TRUNCATE);
-            } else {
-                divide(this, smallFixNums[primes[i] - minFixNum], null, rem, TRUNCATE);
-            }
+            divide(this, BigInteger.valueOf(primes[i]), null, rem, TRUNCATE);
             if (rem.canonicalize().isZero())
                 return false;
         }
@@ -1946,7 +1907,7 @@ public class BigInteger {
             // Remark 4.28 states: "...A strategy that is sometimes employed
             // is to fix the bases a to be the first few primes instead of
             // choosing them at random.
-            z = smallFixNums[primes[t] - minFixNum].modPow(m, this);
+            z = new BigInteger(primes[t]).modPow(m, this);
             if (z.isOne() || z.equals(pMinus1))
                 continue;            // Passes the test; may be prime.
 
@@ -2364,7 +2325,7 @@ public class BigInteger {
      * Return the logical (bit-wise) negation of a BigInteger.
      */
     public BigInteger not() {
-        return bitOp(12, this, ZERO);
+        return bitOp(12, this, new BigInteger(0));
     }
 
 //
@@ -2431,28 +2392,28 @@ public class BigInteger {
         if (n < 0)
             throw new ArithmeticException();
 
-        return and(ONE.shiftLeft(n).not());
+        return and(new BigInteger(1).shiftLeft(n).not());
     }
 
     public BigInteger setBit(int n) {
         if (n < 0)
             throw new ArithmeticException();
 
-        return or(ONE.shiftLeft(n));
+        return or(new BigInteger(1).shiftLeft(n));
     }
 
     public boolean testBit(int n) {
         if (n < 0)
             throw new ArithmeticException();
 
-        return !and(ONE.shiftLeft(n)).isZero();
+        return !and(new BigInteger(1).shiftLeft(n)).isZero();
     }
 
     public BigInteger flipBit(int n) {
         if (n < 0)
             throw new ArithmeticException();
 
-        return xor(ONE.shiftLeft(n));
+        return xor(new BigInteger(1).shiftLeft(n));
     }
 
     public int getLowestSetBit() {

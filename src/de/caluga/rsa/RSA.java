@@ -29,8 +29,8 @@ public class RSA {
             BigInteger p = new BigInteger(bitlen / 2, 100, r);
             BigInteger q = new BigInteger(bitlen / 2, 100, r);
             n = p.multiply(q);
-            BigInteger m = (p.subtract(BigInteger.ONE))
-                    .multiply(q.subtract(BigInteger.ONE));
+            BigInteger m = (p.subtract(new BigInteger(1)))
+                    .multiply(q.subtract(new BigInteger(1)));
             while (true) {
                 e = new BigInteger(bitlen, new SecureRandom());
                 while (m.gcd(e).intValue() > 1) e = e.add(new BigInteger(bitlen, new SecureRandom()));
