@@ -1,5 +1,6 @@
 package de.caluga.rsa;
 
+import org.junit.Assert;
 import org.junit.Test;
 
 import java.security.SecureRandom;
@@ -20,9 +21,9 @@ public class TestBigInteger {
         BigInteger int2 = new BigInteger("2", 16);
         BigInteger res = int1.multiply(int2);
         String resStr = res.toString(16);
-        assert (resStr.equalsIgnoreCase("1E0"));
+        Assert.assertTrue(resStr.equalsIgnoreCase("1E0"));
         BigInteger res2 = res.divide(int2);
-        assert (res2.equals(int1));
+        Assert.assertTrue(res2.equals(int1));
     }
 
     @Test
@@ -32,7 +33,7 @@ public class TestBigInteger {
         BigInteger int2 = new BigInteger(512, rnd);
         BigInteger res = int1.multiply(int2);
         BigInteger res2 = res.divide(int2);
-        assert (res2.equals(int1));
+        Assert.assertTrue(res2.equals(int1));
     }
 
     @Test
@@ -41,7 +42,7 @@ public class TestBigInteger {
         BigInteger int1 = new BigInteger(512, rnd);
         BigInteger int2 = int1.multiply(BigInteger.valueOf(2));
         BigInteger int3 = int1.shiftLeft(1);
-        assert (int2.equals(int3));
+        Assert.assertTrue(int2.equals(int3));
     }
 
 
@@ -51,7 +52,7 @@ public class TestBigInteger {
         BigInteger int1 = new BigInteger(512, rnd);
         BigInteger int2 = int1.divide(BigInteger.valueOf(2));
         BigInteger int3 = int1.shiftRight(1);
-        assert (int2.equals(int3));
+        Assert.assertTrue(int2.equals(int3));
     }
 
     @Test
@@ -61,8 +62,8 @@ public class TestBigInteger {
         BigInteger int3 = int1.multiply(int1);
 
         BigInteger result = new BigInteger("78FD4004", 16);
-        assert (int2.equals(int3));
-        assert (int3.equals(result));
+        Assert.assertTrue(int2.equals(int3));
+        Assert.assertTrue(int3.equals(result));
     }
 
     @Test
@@ -94,8 +95,8 @@ public class TestBigInteger {
         BigInteger int2 = new BigInteger("0");
         int offset = BigInteger.fromBytes(int2, dat, 0);
         byte[] dat2 = int2.serialize();
-        assert (Utils.getHex(dat).equals(Utils.getHex(dat2)));
-        assert (int1.equals(int2)) : "Values different: " + int1 + " != " + int2;
+        Assert.assertTrue(Utils.getHex(dat).equals(Utils.getHex(dat2)));
+        Assert.assertTrue(int1.equals(int2));// : "Values different: " + int1 + " != " + int2;
 //        System.out.println("int1: "+int1+" int1.ival: "+int1.getIval()+"  int1.words.length:"+int1.getWords().length);
 //        System.out.println("int2: "+int2+" int2.ival: "+int2.getIval()+"  int2.words.length:"+int2.getWords().length);
     }
@@ -116,7 +117,7 @@ public class TestBigInteger {
             System.out.println("Dat2: " + dat2Hex);
             System.out.println("Dat : " + datHex);
 
-            assert (datHex.equals(dat2Hex));
+            Assert.assertTrue(datHex.equals(dat2Hex));
             System.out.println("");
         }
     }
@@ -134,7 +135,7 @@ public class TestBigInteger {
         BigInteger int1 = new BigInteger("95BAB494605447CFB7069B7F8B65F980", 16);
         BigInteger add = new BigInteger("9F165FDDA6598C4CB2770537841C59180", 16);
         BigInteger div = add.divide(int1);
-        assert (div.toString().equals("11")) : div.toString();
+        Assert.assertTrue(div.toString().equals("11"));// : div.toString();
 
     }
 
@@ -149,13 +150,13 @@ public class TestBigInteger {
             BigInteger div = add.divide(int1);
             if (!div.toString().equals("11")) {
                 div = add.divide(int1);
-                assert (div.toString().equals("11")) : div.toString();
+                Assert.assertTrue(div.toString().equals("11"));// : div.toString();
             }
             BigInteger int2 = int1.subtract(BigInteger.valueOf(1));
             add = add.add(int2);
             BigInteger[] res = add.divideAndRemainder(int1);
-            assert (res[0].equals(div)) : "res[0]=" + res[0].toString() + " div=" + div.toString();
-            assert (res[1].equals(int2)) : "res[1]=" + res[0].toString() + " int2=" + int2.toString();
+            Assert.assertTrue(res[0].equals(div));// : "res[0]=" + res[0].toString() + " div=" + div.toString();
+            Assert.assertTrue(res[1].equals(int2));// : "res[1]=" + res[0].toString() + " int2=" + int2.toString();
         }
     }
 
