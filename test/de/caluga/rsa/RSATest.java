@@ -1,5 +1,6 @@
 package de.caluga.rsa;
 
+import org.junit.Assert;
 import org.junit.Test;
 
 import java.nio.charset.Charset;
@@ -21,7 +22,7 @@ public class RSATest {
         BigInteger message = new BigInteger(128, new SecureRandom());
         BigInteger enc = r.encrypt(message);
         BigInteger dec = r.decrypt(enc);
-        assert (dec.equals(message));
+        Assert.assertTrue(dec.equals(message));
     }
 
     @Test
@@ -36,7 +37,7 @@ public class RSATest {
             byte[] enc = r.encrypt(message);
             byte[] dec = r.decrypt(enc);
             String decoded = new String(dec, Charset.forName("UTF8"));
-            assert (decoded.equals(message)) : decoded + "!=" + message;
+            Assert.assertTrue(decoded.equals(message)); // : decoded + "!=" + message;
         }
     }
 
@@ -46,9 +47,9 @@ public class RSATest {
         String message = "A testmessage! A Testmessage!";
 
         byte[] sign = r.sign(message.getBytes(Charset.forName("UTF8")));
-        assert (r.isValidSigned(sign, message.getBytes(Charset.forName("UTF8"))));
+        Assert.assertTrue(r.isValidSigned(sign, message.getBytes(Charset.forName("UTF8"))));
         message = "different";
-        assert (!r.isValidSigned(sign, message.getBytes(Charset.forName("UTF8"))));
+        Assert.assertTrue(!r.isValidSigned(sign, message.getBytes(Charset.forName("UTF8"))));
     }
 
     @Test
@@ -59,7 +60,7 @@ public class RSATest {
         byte[] enc = r.encrypt(message);
         byte[] dec = r.decrypt(enc);
         String str = new String(dec);
-        assert (str.equals(message));
+        Assert.assertTrue(str.equals(message));
     }
 
     @Test
@@ -78,12 +79,26 @@ public class RSATest {
         List<BigInteger> bis = BigInteger.getIntegersOfBitLength(arr, 120);
         System.out.println("Got bigIntegers: " + bis.size());
         byte res[] = BigInteger.dataFromBigIntArray(bis);
-        assert (res.length == arr.length) : "Array sizes differ!";
+        Assert.assertTrue(res.length == arr.length);// : "Array sizes differ!";
         for (int i = 0; i < res.length; i++) {
-            assert (res[i] == arr[i]);
+            Assert.assertTrue(res[i] == arr[i]);
         }
         System.out.println("res : " + Utils.getHex(res));
         System.out.println("done");
+    }
+
+    @Test
+    public void keyConversionTest() {
+        RSA r = new RSA(512);
+        RSA pub = r.getPublicKey();
+        RSA pri = r.getPrivateKey();
+        System.out.println("RSA: " + r);
+
+        String pubHex = Utils.getHex(pub.getPublicKeyBytes());
+        String pairPubHex = Utils.getHex(r.getPublicKeyBytes());
+        System.out.println("PubHex: " + pubHex);
+        System.out.println("Pair  : " + pairPubHex);
+        Assert.assertEquals(pubHex, pairPubHex);
     }
 
     @Test
@@ -105,8 +120,8 @@ public class RSATest {
             //server gets encoded Public KEy => decoding
             byte[] decoededPublicKey = serverKeyPair.decrypt(pubkEncoded);
             RSA clientPubKey = RSA.publicKey(decoededPublicKey);
-            assert (clientPubKey.getN().equals(clientKeypair.getN()));
-            assert (clientPubKey.getE().equals(clientKeypair.getE()));
+            Assert.assertEquals(clientPubKey.getN(), (clientKeypair.getN()));
+            Assert.assertEquals(clientPubKey.getE(), (clientKeypair.getE()));
 
             String aMessage = "This is a simple Message for the client, sent by server";
             for (int i = 0; i < 10; i++) aMessage += aMessage;
@@ -116,7 +131,7 @@ public class RSATest {
             //on client, receive answer
             byte[] decodedMessage = clientKeypair.decrypt(encodedMessage);
             String receivedMessage = new String(decodedMessage, Charset.forName("UTF8"));
-            assert (receivedMessage.equals(aMessage));
+            Assert.assertEquals(receivedMessage, (aMessage));
         }
     }
 

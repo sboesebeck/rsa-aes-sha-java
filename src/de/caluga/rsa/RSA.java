@@ -118,6 +118,7 @@ public class RSA {
         RSA ret = new RSA();
         ret.n = this.n;
         ret.d = this.d;
+        ret.bitLen = this.bitLen;
         return ret;
     }
 
@@ -125,6 +126,7 @@ public class RSA {
         RSA ret = new RSA();
         ret.n = this.n;
         ret.e = this.e;
+        ret.bitLen = this.bitLen;
         return ret;
     }
 
