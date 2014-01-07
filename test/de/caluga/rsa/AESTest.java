@@ -14,10 +14,9 @@ public class AESTest {
     public void AESTest() {
         AES aes = new AES();
         aes.setKey("the secret key!!the secret key!!");
-        System.out.println(aes.traceInfo);
-        String enc = aes.encrypt("0123456789acbdef");
+        String enc = Utils.getHex(aes.encrypt("0123456789acbdef"));
         System.out.println("Encrypted: " + enc);
-        String dec = aes.decrypt(enc);
+        String dec = new String(aes.decrypt(enc));
         System.out.println("Decrypted: " + dec);
     }
 }

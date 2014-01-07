@@ -1,6 +1,10 @@
 package de.caluga.rsa;
 
 
+import java.nio.charset.Charset;
+import java.util.ArrayList;
+import java.util.List;
+
 /**
  * AES - implementation of the AES block cipher in Java.
  * <p> Illustrative code for the AES block cipher (Rijndael).
@@ -32,33 +36,11 @@ package de.caluga.rsa;
 class AES {
 
     /**
-     * specify whether diagnostic trace output is required.
-     * <p/>
-     * Available levels are:<br>
-     * 0: no trace info is generated<br>
-     * 1: trace major calls with params (setKey, encrypt, decrypt)<br>
-     * 2: + trace round values whilst en/decrypting<br>
-     * 3: + trace all steps within each round<br>
-     * 4: + trace subkey generation<br>
-     * 5: + trace static table values<br>
-     */
-    public int traceLevel = 0;
-
-    /**
-     * string which accumulates diagnostic output for display.
-     * <p/>
-     * Contents are reset on each major call (setKey, encrypt, decrypt)
-     * and should be used after each of these calls returns for display.
-     */
-    public String traceInfo = "";
-
-    /**
      * AES constants and variables.
      */
     public static final int
-            ROUNDS = 14,        // AES has 10-14 rounds
-            BLOCK_SIZE = 16,    // AES uses 128-bit (16 byte) key
-            KEY_LENGTH = 32;    // AES uses 128/192/256-bit (16/24/32 byte) key
+            BLOCK_SIZE = 16;    // AES uses 128-bit (16 byte) blocks
+
 
     // Define key attributes for current AES instance
     /**
@@ -228,15 +210,13 @@ class AES {
      * @param plain the 128-bit plaintext value to encrypt.
      * @return the encrypted 128-bit ciphertext value.
      */
-    public byte[] encrypt(byte[] plain) {
+    public byte[] encryptBlock(byte[] plain) {
         // define working variables
         byte[] a = new byte[BLOCK_SIZE];    // AES state variable
         byte[] ta = new byte[BLOCK_SIZE];    // AES temp state variable
         byte[] Ker;                // encrypt keys for current round
         int i, j, k, row, col;
 
-        traceInfo = "";                // reset trace info
-        if (traceLevel > 0) traceInfo = "encryptAES(" + Utils.getHex(plain) + ")";
 
         // check for bad arguments
         if (plain == null)
@@ -247,19 +227,13 @@ class AES {
         // copy plaintext bytes into state and do initial AddRoundKey(state)
         Ker = Ke[0];
         for (i = 0; i < BLOCK_SIZE; i++) a[i] = (byte) (plain[i] ^ Ker[i]);
-        if (traceLevel > 2)
-            traceInfo += "n  R0 (Key = " + Utils.getHex(Ker) + ")ntAK = " + Utils.getHex(a);
-        else if (traceLevel > 1)
-            traceInfo += "n  R0 (Key = " + Utils.getHex(Ker) + ")t = " + Utils.getHex(a);
 
         // for each round except last, apply round transforms
         for (int r = 1; r < numRounds; r++) {
             Ker = Ke[r];            // get session keys for this round
-            if (traceLevel > 1) traceInfo += "n  R" + r + " (Key = " + Utils.getHex(Ker) + ")t";
 
             // SubBytes(state) into ta using S-Box S
             for (i = 0; i < BLOCK_SIZE; i++) ta[i] = S[a[i] & 0xFF];
-            if (traceLevel > 2) traceInfo += "ntSB = " + Utils.getHex(ta);
 
             // ShiftRows(state) into a
             for (i = 0; i < BLOCK_SIZE; i++) {
@@ -267,7 +241,6 @@ class AES {
                 k = (i + (row_shift[row] * COL_SIZE)) % BLOCK_SIZE;    // get shifted byte index
                 a[i] = ta[k];
             }
-            if (traceLevel > 2) traceInfo += "ntSR = " + Utils.getHex(a);
 
             // MixColumns(state) into ta
             //   implemented by expanding matrix mult for each column
@@ -279,21 +252,16 @@ class AES {
                 ta[i + 2] = (byte) (a[i] ^ a[i + 1] ^ mul(2, a[i + 2]) ^ mul(3, a[i + 3]));
                 ta[i + 3] = (byte) (mul(3, a[i]) ^ a[i + 1] ^ a[i + 2] ^ mul(2, a[i + 3]));
             }
-            if (traceLevel > 2) traceInfo += "ntMC = " + Utils.getHex(ta);
 
             // AddRoundKey(state) into a
             for (i = 0; i < BLOCK_SIZE; i++) a[i] = (byte) (ta[i] ^ Ker[i]);
-            if (traceLevel > 2) traceInfo += "ntAK";
-            if (traceLevel > 1) traceInfo += " = " + Utils.getHex(a);
         }
 
         // last round is special - only has SubBytes, ShiftRows and AddRoundKey
         Ker = Ke[numRounds];            // get session keys for final round
-        if (traceLevel > 1) traceInfo += "n  R" + numRounds + " (Key = " + Utils.getHex(Ker) + ")t";
 
         // SubBytes(state) into a using S-Box S
         for (i = 0; i < BLOCK_SIZE; i++) a[i] = S[a[i] & 0xFF];
-        if (traceLevel > 2) traceInfo += "ntSB = " + Utils.getHex(a);
 
         // ShiftRows(state) into ta
         for (i = 0; i < BLOCK_SIZE; i++) {
@@ -301,13 +269,9 @@ class AES {
             k = (i + (row_shift[row] * COL_SIZE)) % BLOCK_SIZE;    // get shifted byte index
             ta[i] = a[k];
         }
-        if (traceLevel > 2) traceInfo += "ntSR = " + Utils.getHex(a);
 
         // AddRoundKey(state) into a
         for (i = 0; i < BLOCK_SIZE; i++) a[i] = (byte) (ta[i] ^ Ker[i]);
-        if (traceLevel > 2) traceInfo += "ntAK";
-        if (traceLevel > 1) traceInfo += " = " + Utils.getHex(a) + "n";
-        if (traceLevel > 0) traceInfo += " = " + Utils.getHex(a) + "n";
         return (a);
     }
 
@@ -323,15 +287,13 @@ class AES {
      * @param cipher the 128-bit ciphertext value to decrypt.
      * @return the decrypted 128-bit plaintext value.
      */
-    public byte[] decrypt(byte[] cipher) {
+    public byte[] decryptBlock(byte[] cipher) {
         // define working variables
         byte[] a = new byte[BLOCK_SIZE];    // AES state variable
         byte[] ta = new byte[BLOCK_SIZE];    // AES temp state variable
         byte[] Kdr;                // encrypt keys for current round
         int i, j, k, row, col;
 
-        traceInfo = "";                // reset trace info
-        if (traceLevel > 0) traceInfo = "decryptAES(" + Utils.getHex(cipher) + ")";
 
         // check for bad arguments
         if (cipher == null)
@@ -342,15 +304,10 @@ class AES {
         // copy ciphertext bytes into state and do initial AddRoundKey(state)
         Kdr = Kd[0];
         for (i = 0; i < BLOCK_SIZE; i++) a[i] = (byte) (cipher[i] ^ Kdr[i]);
-        if (traceLevel > 2)
-            traceInfo += "n  R0 (Key = " + Utils.getHex(Kdr) + ")nt AK = " + Utils.getHex(a);
-        else if (traceLevel > 1)
-            traceInfo += "n  R0 (Key = " + Utils.getHex(Kdr) + ")t = " + Utils.getHex(a);
 
         // for each round except last, apply round transforms
         for (int r = 1; r < numRounds; r++) {
             Kdr = Kd[r];            // get session keys for this round
-            if (traceLevel > 1) traceInfo += "n  R" + r + " (Key = " + Utils.getHex(Kdr) + ")t";
 
             // InvShiftRows(state) into ta (nb. same shift as encrypt but subtract)
             for (i = 0; i < BLOCK_SIZE; i++) {
@@ -359,15 +316,12 @@ class AES {
                 k = (i + BLOCK_SIZE - (row_shift[row] * COL_SIZE)) % BLOCK_SIZE;
                 ta[i] = a[k];
             }
-            if (traceLevel > 2) traceInfo += "ntISR = " + Utils.getHex(ta);
 
             // InvSubBytes(state) into a using inverse S-box Si
             for (i = 0; i < BLOCK_SIZE; i++) a[i] = Si[ta[i] & 0xFF];
-            if (traceLevel > 2) traceInfo += "ntISB = " + Utils.getHex(a);
 
             // AddRoundKey(state) into ta
             for (i = 0; i < BLOCK_SIZE; i++) ta[i] = (byte) (a[i] ^ Kdr[i]);
-            if (traceLevel > 2) traceInfo += "nt AK = " + Utils.getHex(ta);
 
             // InvMixColumns(state) into a
             //   implemented by expanding matrix mult for each column
@@ -379,13 +333,10 @@ class AES {
                 a[i + 2] = (byte) (mul(0x0d, ta[i]) ^ mul(0x09, ta[i + 1]) ^ mul(0x0e, ta[i + 2]) ^ mul(0x0b, ta[i + 3]));
                 a[i + 3] = (byte) (mul(0x0b, ta[i]) ^ mul(0x0d, ta[i + 1]) ^ mul(0x09, ta[i + 2]) ^ mul(0x0e, ta[i + 3]));
             }
-            if (traceLevel > 2) traceInfo += "ntIMC";
-            if (traceLevel > 1) traceInfo += " = " + Utils.getHex(a);
         }
 
         // last round is special - only has InvShiftRows, InvSubBytes and AddRoundKey
         Kdr = Kd[numRounds];            // get session keys for final round
-        if (traceLevel > 1) traceInfo += "n  R" + numRounds + " (Key = " + Utils.getHex(Kdr) + ")t";
 
         // InvShiftRows(state) into ta
         for (i = 0; i < BLOCK_SIZE; i++) {
@@ -394,17 +345,12 @@ class AES {
             k = (i + BLOCK_SIZE - (row_shift[row] * COL_SIZE)) % BLOCK_SIZE;
             ta[i] = a[k];
         }
-        if (traceLevel > 2) traceInfo += "ntISR = " + Utils.getHex(a);
 
         // InvSubBytes(state) into ta using inverse S-box Si
         for (i = 0; i < BLOCK_SIZE; i++) ta[i] = Si[ta[i] & 0xFF];
-        if (traceLevel > 2) traceInfo += "ntISB = " + Utils.getHex(a);
 
         // AddRoundKey(state) into a
         for (i = 0; i < BLOCK_SIZE; i++) a[i] = (byte) (ta[i] ^ Kdr[i]);
-        if (traceLevel > 2) traceInfo += "nt AK";
-        if (traceLevel > 1) traceInfo += " = " + Utils.getHex(a) + "n";
-        if (traceLevel > 0) traceInfo += " = " + Utils.getHex(a) + "n";
         return (a);
     }
 
@@ -426,9 +372,6 @@ class AES {
         final int Nk = Klen / 4;
 
         int i, j, r;
-
-        traceInfo = "";            // reset trace info
-        if (traceLevel > 0) traceInfo = "setKey(" + Utils.getHex(key) + ")n";
 
         // check for bad arguments
         if (key == null)
@@ -502,50 +445,7 @@ class AES {
             }
         }
 
-        // create trace info if needed
-        if (traceLevel > 3) {
-            traceInfo += "  Encrypt Round keys:n";
-            for (r = 0; r < numRounds + 1; r++) traceInfo += "  R" + r + "t = " + Utils.getHex(Ke[r]) + "n";
-            traceInfo += "  Decrypt Round keys:n";
-            for (r = 0; r < numRounds + 1; r++) traceInfo += "  R" + r + "t = " + Utils.getHex(Kd[r]) + "n";
-        }
     }
-
-//
-//    /** self-test routine for AES cipher
-//     *  @param hkey    key to test in hex
-//     *  @param hplain    plaintext to test in hex
-//     *  @param hcipher    ciphertext to test in hex
-//     *  @param lev    trace level to use
-//     */
-//    public static void self_test (String hkey, String hplain, String hcipher, int lev) {
-//
-//        // AES test triple (128-bit key test value from FIPS-197)
-//        byte [] key    = Util.hex2byte(hkey);
-//        byte [] plain    = Util.hex2byte(hplain);
-//        byte [] cipher    = Util.hex2byte(hcipher);
-//        byte [] result;
-//
-//        AES testAES = new AES();    // create new AES instance to test triple
-//        testAES.traceLevel = lev;    // select level of trace info
-//        testAES.setKey(key);        // set key and display trace info
-//        System.out.print(testAES.traceInfo);
-//
-//        result = testAES.encrypt(plain);    // test encryption
-//        System.out.print(testAES.traceInfo);
-//        if (Arrays.equals(result, cipher))
-//            System.out.print("Test OKn");
-//        else
-//            System.out.print("Test Failed. Result was "+Util.toHEX(result)+"n");
-//
-//        result = testAES.decrypt(cipher);    // test decryption
-//        System.out.print(testAES.traceInfo);
-//        if (Arrays.equals(result, plain))
-//            System.out.print("Test OKn");
-//        else
-//            System.out.print("Test Failed. Result was "+Util.toHEX(result)+"n");
-//        System.out.println();
-//    }
 
 
     public static String static_byteArrayToString(byte[] data) {
@@ -560,59 +460,77 @@ class AES {
         return res;
     }
 
-    public static byte[] static_stringToByteArray(String s) {
-        byte[] temp = new byte[s.length()];
-        for (int i = 0; i < s.length(); i++) {
-            temp[i] = (byte) s.charAt(i);
-        }
-        return temp;
-    }
-
-    public static String static_intArrayToString(int[] t) {
-        StringBuffer sb = new StringBuffer();
-        for (int i = 0; i < t.length; i++) {
-            sb.append((char) t[i]);
-        }
-        return sb.toString();
-    }
 
     /**
      * self-test routine for AES cipher
      */
-
-    public String _cryptAll(String data, int mode) {
-        AES aes = this;
-        if (data.length() / 16 > ((int) data.length() / 16)) {
-            int rest = data.length() - ((int) data.length() / 16) * 16;
-            for (int i = 0; i < rest; i++)
-                data += " ";
+//
+//    public String _cryptAll(String data, int mode) {
+//        AES aes = this;
+//        if (data.length() / 16 > ((int) data.length() / 16)) {
+//            int rest = data.length() - ((int) data.length() / 16) * 16;
+//            for (int i = 0; i < rest; i++)
+//                data += " ";
+//        }
+//        int nParts = (int) data.length() / 16;
+//        byte[] res = new byte[data.length()];
+//        String partStr = "";
+//        byte[] partByte = new byte[16];
+//        for (int p = 0; p < nParts; p++) {
+//            partStr = data.substring(p * 16, p * 16 + 16);
+//            partByte = static_stringToByteArray(partStr);
+//            if (mode == 1) partByte = aes.encrypt(partByte);
+//            if (mode == 2) partByte = aes.decrypt(partByte);
+//            for (int b = 0; b < 16; b++)
+//                res[p * 16 + b] = partByte[b];
+//        }
+//        return static_byteArrayToString(res);
+//    }
+    public byte[] encrypt(byte[] data) {
+        List<Byte> ret = new ArrayList<>();
+        byte[] block = new byte[BLOCK_SIZE];
+        for (int i = 0; i < data.length; i += BLOCK_SIZE) {
+            System.arraycopy(data, i, block, 0, BLOCK_SIZE);
+            byte[] part = encryptBlock(block);
+            for (byte b : part) {
+                ret.add(b);
+            }
         }
-        int nParts = (int) data.length() / 16;
-        byte[] res = new byte[data.length()];
-        String partStr = "";
-        byte[] partByte = new byte[16];
-        for (int p = 0; p < nParts; p++) {
-            partStr = data.substring(p * 16, p * 16 + 16);
-            partByte = static_stringToByteArray(partStr);
-            if (mode == 1) partByte = aes.encrypt(partByte);
-            if (mode == 2) partByte = aes.decrypt(partByte);
-            for (int b = 0; b < 16; b++)
-                res[p * 16 + b] = partByte[b];
+        byte[] r = new byte[ret.size()];
+        for (int i = 0; i < ret.size(); i++) {
+            r[i] = ret.get(i);
         }
-        return static_byteArrayToString(res);
+        return r;
     }
 
-    public String encrypt(String data) {
-        return _cryptAll(data, 1);
+    public byte[] encrypt(String data) {
+        return encrypt(data.getBytes(Charset.forName("UTF8")));
     }
 
-    public String decrypt(String data) {
-        return _cryptAll(data, 2);
+    public byte[] decrypt(byte[] data) {
+        List<Byte> ret = new ArrayList<>();
+        byte[] block = new byte[BLOCK_SIZE];
+        for (int i = 0; i < data.length; i += BLOCK_SIZE) {
+            System.arraycopy(data, i, block, 0, BLOCK_SIZE);
+            byte[] part = decryptBlock(block);
+            for (byte b : part) {
+                ret.add(b);
+            }
+        }
+        byte[] r = new byte[ret.size()];
+        for (int i = 0; i < ret.size(); i++) {
+            r[i] = ret.get(i);
+        }
+        return r;
+    }
+
+    public byte[] decrypt(String data) {
+        return decrypt(data.getBytes(Charset.forName("UTF8")));
     }
 
     public void setKey(String key) {
-        //System.out.println("CRYPT KEY IS "+key);
-        setKey(static_stringToByteArray(key));
+        //TODO: fix length to some size!
+        setKey(key.getBytes());
     }
 
 
