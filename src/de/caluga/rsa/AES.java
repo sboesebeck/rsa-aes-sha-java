@@ -487,20 +487,48 @@ class AES {
 //        return static_byteArrayToString(res);
 //    }
     public byte[] encrypt(byte[] data) {
+        byte[] r = new byte[data.length + 4];
+        fillInteger(data.length, r, 0);
+        System.arraycopy(data, 0, r, 4, data.length);
+
         List<Byte> ret = new ArrayList<>();
-        byte[] block = new byte[BLOCK_SIZE];
-        for (int i = 0; i < data.length; i += BLOCK_SIZE) {
-            System.arraycopy(data, i, block, 0, BLOCK_SIZE);
+        for (int i = 0; i < r.length; i += BLOCK_SIZE) {
+            byte[] block = new byte[BLOCK_SIZE];
+            int l = BLOCK_SIZE;
+            if (i + BLOCK_SIZE > r.length) {
+                l = r.length - i;
+            }
+            System.arraycopy(r, i, block, 0, l);
             byte[] part = encryptBlock(block);
             for (byte b : part) {
                 ret.add(b);
             }
         }
-        byte[] r = new byte[ret.size()];
+
+
+        byte[] res = new byte[ret.size()];
+        //first - length of decoded data
         for (int i = 0; i < ret.size(); i++) {
-            r[i] = ret.get(i);
+            res[i] = ret.get(i);
         }
-        return r;
+        return res;
+    }
+
+    private static int getIntFrom(byte[] buffer, int idx) {
+        long v = 0;
+        v |= ((long) buffer[idx + 0] & 0xff) << 24;
+        v |= ((long) buffer[idx + 1] & 0xff) << 16;
+        v |= ((long) buffer[idx + 2] & 0xff) << 8;
+        v |= ((long) buffer[idx + 3] & 0xff);
+
+        return (int) (v & 0xffffffff);
+    }
+
+    private static void fillInteger(int v, byte[] buffer, int position) {
+        buffer[0 + position] = (byte) (((v) >>> 24) & 0xff);
+        buffer[1 + position] = (byte) (((v) >>> 16) & 0xff);
+        buffer[2 + position] = (byte) (((v) >>> 8) & 0xff);
+        buffer[3 + position] = (byte) (((v) & 0xff));
     }
 
     public byte[] encrypt(String data) {
@@ -508,20 +536,27 @@ class AES {
     }
 
     public byte[] decrypt(byte[] data) {
-        List<Byte> ret = new ArrayList<>();
-        byte[] block = new byte[BLOCK_SIZE];
+        List<Byte> dec = new ArrayList<>();
         for (int i = 0; i < data.length; i += BLOCK_SIZE) {
+            byte[] block = new byte[BLOCK_SIZE];
             System.arraycopy(data, i, block, 0, BLOCK_SIZE);
             byte[] part = decryptBlock(block);
             for (byte b : part) {
-                ret.add(b);
+                dec.add(b);
             }
         }
-        byte[] r = new byte[ret.size()];
-        for (int i = 0; i < ret.size(); i++) {
-            r[i] = ret.get(i);
+        byte mid[] = new byte[dec.size()];
+        int idx = 0;
+        for (byte b : dec) {
+            mid[idx++] = b;
         }
-        return r;
+//        System.out.println("Mid: "+Utils.getHex(mid));
+        int l = getIntFrom(mid, 0);
+//        System.out.println("Decrypted length: "+l);
+        byte result[] = new byte[l];
+        System.arraycopy(mid, 4, result, 0, l);
+
+        return result;
     }
 
     public byte[] decrypt(String data) {
