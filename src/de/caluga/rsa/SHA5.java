@@ -44,8 +44,8 @@ package de.caluga.rsa;
  * through Java Cryptography Architecture (JCA), as a pluggable
  * MessageDigest implementation.
  *
- * @version 1.6 10/10/06
  * @author Valerie Peng
+ * @version 1.6 10/10/06
  */
 
 public class SHA5 implements Cloneable {
@@ -177,7 +177,7 @@ public class SHA5 implements Cloneable {
      * @param x long
      * @return long
      */
-    private static long lf_delta1(long x) {
+    public static long lf_delta1(long x) {
         return lf_S(x, 19) ^ lf_S(x, 61) ^ lf_R(x, 6);
     }
 
@@ -361,7 +361,7 @@ public class SHA5 implements Cloneable {
     }
 
     void performDigest(byte[] hashvalue, int offset, int resultLength) {
-	/* The input length in bits before padding occurs */
+    /* The input length in bits before padding occurs */
         long inputLength = count << 3;
 
         update(0x80);
@@ -465,8 +465,10 @@ public class SHA5 implements Cloneable {
         // The first 16 longs are from the byte stream, compute the rest of
         // the W[]'s
         for (int t = 16; t < ITERATION; t++) {
-            W[t] = lf_delta1(W[t - 2]) + W[t - 7] + lf_delta0(W[t - 15])
-                    + W[t - 16];
+
+            long d1 = lf_delta1(W[t - 2]);
+            long d2 = lf_delta0(W[t - 15]);
+            W[t] = d1 + W[t - 7] + d2 + W[t - 16];
         }
 
         a = AA;

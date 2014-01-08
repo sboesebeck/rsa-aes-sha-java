@@ -49,4 +49,11 @@ public class SHATest {
 
 
     }
+
+    @Test
+    public void testLFDelta() {
+        long w = -6739068508724883454l;
+        long ret = SHA5.lf_delta1(w);
+        System.out.println(ret);
+    }
 }
