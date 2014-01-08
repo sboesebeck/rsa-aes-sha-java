@@ -15,6 +15,7 @@ public class SHATest {
         SHA3 sha = new SHA3();
         sha.init();
         byte[] b = "Test".getBytes();
+        System.out.println("Plain: " + Utils.getHex(b));
         sha.engineUpdate(b, 0, b.length);
         byte[] dig = sha.engineDigest();
         System.out.println("SHA3(384): " + Utils.getHex(dig));
@@ -33,5 +34,19 @@ public class SHATest {
         sha.engineUpdate(b, 0, b.length);
         dig = sha.engineDigest();
         System.out.println("SHA3(256): " + Utils.getHex(dig));
+    }
+
+
+    @Test
+    public void testSHA5() {
+        SHA5 sha = new SHA5();
+        sha.init();
+        byte[] b = "Test".getBytes();
+        System.out.println("Plain: " + Utils.getHex(b));
+        sha.engineUpdate(b, 0, b.length);
+        byte[] dig = sha.engineDigest();
+        System.out.println("SHA512: " + Utils.getHex(dig));
+
+
     }
 }
