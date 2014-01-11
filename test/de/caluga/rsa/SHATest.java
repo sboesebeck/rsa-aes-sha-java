@@ -39,7 +39,7 @@ public class SHATest {
 
     @Test
     public void testSHA5() {
-        SHA5 sha = new SHA5();
+        SHA2 sha = new SHA2();
         sha.init();
         byte[] b = "Test".getBytes();
         System.out.println("Plain: " + Utils.getHex(b));
@@ -53,7 +53,7 @@ public class SHATest {
     @Test
     public void testLFDelta() {
         long w = -6739068508724883454l;
-        long ret = SHA5.lf_delta1(w);
+        long ret = SHA2.lf_delta1(w);
         System.out.println(ret);
     }
 }

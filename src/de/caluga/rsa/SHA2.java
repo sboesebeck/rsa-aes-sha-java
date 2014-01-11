@@ -48,7 +48,7 @@ package de.caluga.rsa;
  * @version 1.6 10/10/06
  */
 
-public class SHA5 implements Cloneable {
+public class SHA2 implements Cloneable {
 
     private static final int LENGTH = 64;
     private static final long[] INITIAL_HASHES = {
@@ -184,7 +184,7 @@ public class SHA5 implements Cloneable {
     /**
      * Creates a SHA5 object with state (for cloning)
      */
-    SHA5(SHA5 sha) {
+    SHA2(SHA2 sha) {
         this();
         System.arraycopy(sha.W, 0, this.W, 0, W.length);
         this.count = sha.count;
@@ -201,23 +201,17 @@ public class SHA5 implements Cloneable {
     /**
      * Creates a new SHA object.
      */
-    public SHA5() {
+    public SHA2() {
         init();
     }
 
-    /**
-     * @return the length of the digest in bytes
-     */
-    protected int engineGetDigestLength() {
-        return (LENGTH);
-    }
 
     /**
      * Update a byte.
      *
      * @param b the byte
      */
-    protected void engineUpdate(byte b) {
+    public void engineUpdate(byte b) {
         update((int) b);
     }
 
@@ -248,7 +242,7 @@ public class SHA5 implements Cloneable {
      * @param off the start offset in the data
      * @param len the number of bytes to be updated.
      */
-    protected void engineUpdate(byte b[], int off, int len) {
+    public void engineUpdate(byte b[], int off, int len) {
         int word;
         int offset;
 
@@ -314,8 +308,21 @@ public class SHA5 implements Cloneable {
     /**
      * Resets the buffers and hash value to start a new hash.
      */
-    protected void engineReset() {
+    public void engineReset() {
         init();
+    }
+
+    public byte[] engineDigest(int bitLen) {
+        int len = bitLen / 8;
+        byte hashvalue[] = new byte[len];
+
+        try {
+            int outLen = engineDigest(hashvalue, 0, hashvalue.length);
+        } catch (Exception e) {
+            e.printStackTrace();
+            throw new InternalError("");
+        }
+        return hashvalue;
     }
 
     /**
@@ -324,7 +331,7 @@ public class SHA5 implements Cloneable {
      * use, as specified in java.security.MessageDigest javadoc
      * specification.
      */
-    protected byte[] engineDigest() {
+    public byte[] engineDigest() {
         byte hashvalue[] = new byte[LENGTH];
 
         try {
@@ -349,18 +356,18 @@ public class SHA5 implements Cloneable {
      */
     protected int engineDigest(byte[] hashvalue, int offset, int len) {
 
-        if (len < LENGTH) {
+        if (len > LENGTH) {
             throw new RuntimeException("partial digests not returned");
         }
-        if (hashvalue.length - offset < LENGTH) {
+        if (hashvalue.length - offset < len) {
             throw new RuntimeException("output buffer too small " +
                     "to store the digest");
         }
-        performDigest(hashvalue, offset, LENGTH);
-        return LENGTH;
+        performDigest(hashvalue, offset, len);
+        return len;
     }
 
-    void performDigest(byte[] hashvalue, int offset, int resultLength) {
+    protected void performDigest(byte[] hashvalue, int offset, int resultLength) {
     /* The input length in bits before padding occurs */
         long inputLength = count << 3;
 
@@ -506,8 +513,8 @@ public class SHA5 implements Cloneable {
      * Clones this object.
      */
     public Object clone() {
-        SHA5 that = null;
-        that = new SHA5(this);
+        SHA2 that = null;
+        that = new SHA2(this);
         return that;
     }
 }

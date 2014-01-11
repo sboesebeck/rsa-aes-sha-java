@@ -5,35 +5,7 @@ import java.nio.charset.Charset;
 import java.util.ArrayList;
 import java.util.List;
 
-/**
- * AES - implementation of the AES block cipher in Java.
- * <p> Illustrative code for the AES block cipher (Rijndael).
- * Handles a single block encryption or decryption, with diagnostic
- * logging of intermediate values if required.
- * <p> AES is a block cipher with a key length of 16/24/32 bytes
- * and a block length 16 bytes.
- * <p/>
- * AES (Rijndael) was designed by Joan Daemen and Vincent Rijmen,
- * and was accepted as the US NIST's Advanced Encryption Standard in 2000.
- * <p/>
- * This is the <b>slow, obvious code</b> version, written to follow the
- * algorithm specification as closely and clearly as possible.
- * It's code was originally derived from the illustrative Rijndael Java
- * implementation submitted to the AES process, and sourced from the
- * <a href="http://www.esat.kuleuven.ac.be/~rijmen/rijndael/rijndael.zip">
- * Rijndael sample Java code</a>, but has been extensively adapted by Lawrie Brown
- * to suit the illustrative requirements of the crypto calc applets
- * he has written for his Cryptography courses at ADFA.
- * The code has been tested using the AES triples published in FIPS-197 App C.
- *
- * @author Joan Daemen, Vincent Rijmen, Lawrie Brown, Feb 2005
- * @see <a href="http://www.unsw.adfa.edu.au/~lpb/">Lawrie Brown</a>
- * @see <a href="http://csrc.nist.gov/encryption/aes/">AES home page</a>
- * @see <a href="http://csrc.nist.gov/publications/fips/fips197/fips-197.pdf">FIPS-197 Standard</a>
- * @see <a href="http://www.esat.kuleuven.ac.be/~rijmen/rijndael/">Rijndael Home Page</a>
- * @see <a href="http://www.esat.kuleuven.ac.be/~rijmen/rijndael/rijndael.zip">Rijndael example Java code</a>
- */
-class AES {
+public class AES {
 
     /**
      * AES constants and variables.
@@ -365,7 +337,7 @@ class AES {
      *
      * @param key The 128/192/256-bit AES key to use.
      */
-    public void setKey(byte[] key) {
+    public void setEncryptionKey(byte[] key) {
         // assorted internal constants
         final int BC = BLOCK_SIZE / 4;
         final int Klen = key.length;
@@ -565,7 +537,7 @@ class AES {
 
     public void setKey(String key) {
         //TODO: fix length to some size!
-        setKey(key.getBytes());
+        setEncryptionKey(key.getBytes());
     }
 
 
