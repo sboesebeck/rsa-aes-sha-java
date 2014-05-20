@@ -50,10 +50,6 @@ public class EllipticCurve {
         else pointcmpsize = pb.length + 1;
         //ppodbf = (p.add(BigInteger.ONE)).shiftRight(2);
         name = "";
-
-
-        //FIXME compute the order of the group
-        //FIXME compute a generator for the group
     }
 
     public EllipticCurve(ECDomainParameters ecp) throws InsecureCurveException {
@@ -125,16 +121,6 @@ public class EllipticCurve {
         if (result.compareTo(new BigInteger(0)) == 0) return true;
         else return false;
 
-    }
-
-    //FIXME!!!!!!!!!!
-    public BigInteger calculateOrder() {
-        return null;
-    }
-
-    //FIXME!!!!!!!!
-    public ECPoint calculateGenerator() {
-        return null;
     }
 
     public boolean onCurve(ECPoint q) {

@@ -3,7 +3,11 @@ package de.caluga.ecc;
 import de.caluga.rsa.BigInteger;
 import de.caluga.rsa.SHA2;
 
+import java.util.ArrayList;
+import java.util.List;
+
 public class ECCrypt {
+    public final static int BLOCK_SIZE = 64;
     private EllipticCurve ec;
 
     public ECCrypt(EllipticCurve ec) {
@@ -11,13 +15,43 @@ public class ECCrypt {
 
     }
 
-    public int blockSize() {
-        return 20;
+
+    public byte[] encrypt(byte[] input, ECKey key) {
+        int idx = 0;
+        byte[] data = new byte[input.length + 4];
+        data[0] = (byte) (input.length >> 24 & 0xff);
+        data[1] = (byte) (input.length >> 16 & 0xff);
+        data[2] = (byte) (input.length >> 8 & 0xff);
+        data[3] = (byte) (input.length & 0xff);
+
+        byte[] block = new byte[BLOCK_SIZE];
+        List<Byte> ret = new ArrayList<>();
+        while (idx < data.length) {
+            int len = BLOCK_SIZE;
+            if (idx + len > data.length) {
+                len = data.length - idx;
+                System.arraycopy(data, idx, block, 0, len);
+                for (int i = idx + len; i < data.length; i++) {
+                    block[i] = 0;
+                }
+            }
+            byte enc[] = encryptBlock(block, key);
+            for (byte b : enc) {
+                ret.add(b);
+            }
+        }
+
+        byte[] result = new byte[ret.size()];
+        idx = 0;
+        for (Byte b : ret) {
+            result[idx++] = b;
+        }
+        return result;
     }
 
 
     public byte[] encryptBlock(byte[] input, ECKey key) {
-        if (input.length != 64) throw new IllegalArgumentException("block must be of size 64 bytes");
+        if (input.length != BLOCK_SIZE) throw new IllegalArgumentException("block must be of size 64 bytes");
         ECKey ek = (ECKey) key;
         byte[] res = new byte[ek.mother.getPCS() + input.length];
 

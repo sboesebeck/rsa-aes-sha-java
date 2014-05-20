@@ -25,7 +25,7 @@ public class ECPoint {
                 }
             }
         } catch (NoCommonMotherException e) {
-            System.out.println("ECPoint.fastcache: THIS CANNOT HAPPEN!!!");
+
         }
     }
 

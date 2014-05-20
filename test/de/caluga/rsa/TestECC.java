@@ -34,7 +34,7 @@ public class TestECC {
                 for (int i = 0; i < test1.length; i++) {
                     test1[i] = (byte) i;
                 }
-                byte[] test2 = cs.decryptBlock(cs.encryptBlock(test1, test1.length, pk), sk);
+                byte[] test2 = cs.decryptBlock(cs.encryptBlock(test1, pk), sk);
                 if (Arrays.equals(test1, test1)) System.out.println("Testing...");
                 if (Arrays.equals(test1, test2)) {
                     System.out.println("Succes");
