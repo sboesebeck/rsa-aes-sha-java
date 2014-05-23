@@ -16,24 +16,36 @@ public class RSA {
     private BigInteger n, d, e;
     private int bitLen;
     private String id;
+    private SecureRandom r;
 
     public RSA() {
-
+        r = new SecureRandom();
     }
 
     public RSA(int bitlen) {
+        this();
+        bitLen = bitlen;
+        generate(bitlen, new DefaultPrimeGenerator(r));
+    }
+
+    public RSA(int bitlen, PrimeGenerator pr) {
+        this();
         this.bitLen = bitlen;
-        SecureRandom r = new SecureRandom();
+
+        generate(bitlen, pr);
+    }
+
+    private void generate(int bitlen, PrimeGenerator pr) {
         boolean retry = true;
         while (retry) {
-            BigInteger p = new BigInteger(bitlen / 2, 100, r);
-            BigInteger q = new BigInteger(bitlen / 2, 100, r);
+            BigInteger p = pr.getNexProbablePrime(bitlen / 2, 100);
+            BigInteger q = pr.getNexProbablePrime(bitlen / 2, 100);
             n = p.multiply(q);
             BigInteger m = (p.subtract(new BigInteger(1)))
                     .multiply(q.subtract(new BigInteger(1)));
             while (true) {
                 e = new BigInteger(bitlen, new SecureRandom());
-                while (m.gcd(e).intValue() > 1) e = e.add(new BigInteger(bitlen, new SecureRandom()));
+                while (m.gcd(e).intValue() > 1) e = e.add(new BigInteger(bitlen, r));
                 try {
                     d = e.modInverse(m);
                     System.out.println("BitLength d: " + d.bitLength());
@@ -329,5 +341,6 @@ public class RSA {
     public boolean hasPrivateKey() {
         return n != null && d != null;
     }
+
 
 }

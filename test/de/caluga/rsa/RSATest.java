@@ -7,6 +7,7 @@ import java.nio.charset.Charset;
 import java.security.SecureRandom;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Random;
 
 /**
  * User: Stephan Bösebeck
@@ -23,6 +24,18 @@ public class RSATest {
         BigInteger enc = r.encrypt(message);
         BigInteger dec = r.decrypt(enc);
         Assert.assertTrue(dec.equals(message));
+    }
+
+    @Test
+    public void PrimeGeneratorTest() {
+        RSA r = new RSA(10960, new PrimeGenerator() {
+            @Override
+            public BigInteger getNexProbablePrime(int bitlen, int certainty) {
+                return new BigInteger(512, 100, new Random());
+            }
+        });
+        System.out.println("BitLen  : " + r.getBitLen());
+        System.out.println("BitLen D: " + r.getD().bitCount());
     }
 
     @Test
