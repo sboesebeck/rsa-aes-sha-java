@@ -49,6 +49,17 @@ public class AESTest {
     }
 
     @Test
+    public void AESTestDifferentLength() {
+        AES aes = new AES();
+        aes.setKey("secret1234512345");
+        String data = "12345";
+
+        byte[] enc1 = aes.encrypt(data);
+        System.out.println(Utils.getHex(enc1));
+        enc1 = aes.encrypt(data.getBytes());
+        System.out.println(Utils.getHex(enc1));
+    }
+    @Test
     public void AESTest() {
         AES aes = new AES();
         aes.setKey("the secret key!!the secret key!!");
